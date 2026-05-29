@@ -7,7 +7,7 @@ import platform
 import shutil
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 import typer
 from packaging.version import InvalidVersion, Version
@@ -105,6 +105,46 @@ def check_command() -> None:
     if missing:
         raise typer.Exit(1)
     print_success("All required tools were found.")
+
+
+@app.command("self-check")
+def self_check_cmd(
+    json_output: Annotated[
+        bool,
+        typer.Option("--json", help="Machine-readable JSON output for CI."),
+    ] = False,
+) -> None:
+    """Check whether the installed qakit CLI is up to date with PyPI."""
+    payload = safe_fetch_json("https://pypi.org/pypi/qa-kit-cli/json", {})
+    latest: str | None = None
+    if isinstance(payload, dict):
+        info = payload.get("info", {})
+        if isinstance(info, dict):
+            latest = str(info.get("version", "")).strip() or None
+
+    up_to_date: bool | None = None
+    if latest:
+        try:
+            up_to_date = not (Version(latest) > Version(__version__))
+        except InvalidVersion:
+            up_to_date = None
+
+    if json_output:
+        typer.echo(json.dumps({"installed": __version__, "latest": latest or "unknown", "up_to_date": bool(up_to_date)}))
+        if up_to_date is False:
+            raise typer.Exit(1)
+        return
+
+    if latest is None:
+        print_warning("Could not fetch latest version from PyPI — check your network connection.")
+        raise typer.Exit(1)
+    if up_to_date is False:
+        print_warning(f"Update available: {__version__} → {latest}. Run 'qakit self update'.")
+        raise typer.Exit(1)
+    if up_to_date is None:
+        print_warning(f"Unable to compare versions (installed={__version__}, latest={latest}).")
+        raise typer.Exit(1)
+    print_success(f"qakit is up to date ({__version__}).")
 
 
 @self_app.command("update")

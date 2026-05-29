@@ -44,15 +44,16 @@ def _reregister_active(project_root: Path, qakit_dir: Path) -> None:
         CommandRegistrar().install_for_integration(project_root, qakit_dir, key)
 
 
-@app.command("add")
-@app.command("install")
-def add(
+_ext_alias_shown: set[str] = set()
+
+
+def _do_add_extension(
     extension_ref: str,
-    priority: int = typer.Option(10, "--priority", help="Extension priority (lower = higher priority). Default: 10."),
-    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
-    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+    priority: int,
+    dev: Optional[str],
+    from_url: Optional[str],
 ) -> None:
-    """Add an extension (bundled ID, local --dev path, or --from URL)."""
+    """Shared implementation for install and add extension commands."""
     project_root = Path.cwd()
     qakit_dir = ensure_project_layout(project_root)
     source = from_url or dev or extension_ref
@@ -62,9 +63,52 @@ def add(
     print_success(f"Added extension '{entry['id']}' (priority={priority}).")
 
 
-@app.command("remove")
+def _do_remove_extension(
+    extension_id: str,
+    keep_config: bool,
+    force: bool,
+) -> None:
+    """Shared implementation for uninstall and remove extension commands."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    manager = ExtensionManager(project_root)
+    if manager.remove(extension_id, keep_config=keep_config, force=force):
+        _reregister_active(project_root, qakit_dir)
+        print_success(f"Removed extension '{extension_id}'.")
+        return
+    print_warning(f"Extension '{extension_id}' was not installed.")
+
+
+@app.command("install")
+def install_ext(
+    extension_ref: str,
+    priority: int = typer.Option(10, "--priority", help="Extension priority (lower = higher priority). Default: 10."),
+    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+) -> None:
+    """Install an extension (bundled ID, local --dev path, or --from URL)."""
+    _do_add_extension(extension_ref, priority, dev, from_url)
+
+
+@app.command("add")
+def add(
+    extension_ref: str,
+    priority: int = typer.Option(10, "--priority", help="Extension priority (lower = higher priority). Default: 10."),
+    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+) -> None:
+    """Alias for install."""
+    if "extension.add" not in _ext_alias_shown:
+        _ext_alias_shown.add("extension.add")
+        print_info(
+            "Tip: 'qakit extension add' is an alias for 'qakit extension install'.\n"
+            "     Both work identically — 'install' is the preferred name going forward."
+        )
+    _do_add_extension(extension_ref, priority, dev, from_url)
+
+
 @app.command("uninstall")
-def remove(
+def uninstall_ext(
     extension_id: str,
     keep_config: bool = typer.Option(
         False, "--keep-config", help="Preserve extension config files (back them up instead of deleting)."
@@ -74,14 +118,27 @@ def remove(
     ),
 ) -> None:
     """Remove an installed extension."""
-    project_root = Path.cwd()
-    qakit_dir = ensure_project_layout(project_root)
-    manager = ExtensionManager(project_root)
-    if manager.remove(extension_id, keep_config=keep_config, force=force):
-        _reregister_active(project_root, qakit_dir)
-        print_success(f"Removed extension '{extension_id}'.")
-        return
-    print_warning(f"Extension '{extension_id}' was not installed.")
+    _do_remove_extension(extension_id, keep_config, force)
+
+
+@app.command("remove")
+def remove(
+    extension_id: str,
+    keep_config: bool = typer.Option(
+        False, "--keep-config", help="Preserve extension config files (back them up instead of deleting)."
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Skip confirmation and remove managed files immediately."
+    ),
+) -> None:
+    """Alias for uninstall."""
+    if "extension.remove" not in _ext_alias_shown:
+        _ext_alias_shown.add("extension.remove")
+        print_info(
+            "Tip: 'qakit extension remove' is an alias for 'qakit extension uninstall'.\n"
+            "     Both work identically — 'uninstall' is the preferred name going forward."
+        )
+    _do_remove_extension(extension_id, keep_config, force)
 
 
 @app.command("update")
