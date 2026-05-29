@@ -55,7 +55,7 @@ qakit init my-project --force --script ps
 
 ## Slash Commands
 
-QA Kit installs 37 slash commands into your AI agent's command directory.
+QA Kit installs 37 slash commands into your AI agent's command directory (v0.4.0).
 
 ### QA Strategy & Planning
 
@@ -74,7 +74,7 @@ QA Kit installs 37 slash commands into your AI agent's command directory.
 | Command | Description |
 |---|---|
 | `/qakit.tasks` | Generate a prioritized QA implementation task list from strategy and test plan |
-| `/qakit.tasks.to-issues` | Convert QA implementation tasks into GitHub issue-ready drafts |
+| `/qakit.tasks.issues` | Convert QA task list to GitHub Issues or Jira tickets with labels, milestones, and traceability updates |
 | `/qakit.checklist` | Generate a QA readiness checklist for a feature or release |
 | `/qakit.traceability` | Map requirements → test cases → test files → CI jobs in a traceability matrix |
 | `/qakit.regression` | Build or update the regression suite with P0/P1/P2 tiers and quarantine tracking |
@@ -138,6 +138,29 @@ qakit preset add lean-qa      # Minimal workflow for small teams
 
 ---
 
+## Suites
+
+Suites scope QA artifacts per feature or sprint under `.qakit/suites/<NNN>-<name>/`:
+
+```bash
+qakit suite create login-flow        # Create a suite directory
+qakit suite list                     # List all suites
+qakit suite switch 001-login-flow    # Set active suite
+qakit suite info                     # Show active suite details
+```
+
+You can also create a suite at init time:
+```bash
+qakit init --suite login-flow --here
+```
+
+Or set the active suite via environment variable:
+```bash
+QAKIT_SUITE=login-flow qakit init --here
+```
+
+---
+
 ## Extensions
 
 Extensions add integrations with external tools:
@@ -183,6 +206,7 @@ qakit init [PROJECT_NAME]
   --no-git                            Skip git initialization
   --branch-numbering [sequential|timestamp]
   --preset TEXT                       Install preset at init (repeatable)
+  --suite TEXT                        Create a named suite at init (or set QAKIT_SUITE)
 
 qakit integration install|add <key>       Install an AI agent integration
 qakit integration uninstall|remove <key>  Uninstall an AI agent integration
@@ -205,14 +229,21 @@ qakit extension info <id>                 Show extension details
 qakit extension enable/disable <id>
 qakit extension resolve <template>        Show 4-layer resolution stack
 
-qakit preset add <id> [--priority N]
-qakit preset remove <id>
+qakit preset install <id> [--priority N]
+qakit preset add <id>                     Alias for install (with deprecation tip)
+qakit preset uninstall <id>
+qakit preset remove <id>                  Alias for uninstall (with deprecation tip)
 qakit preset list
 qakit preset search [query]
 qakit preset info <id>
 qakit preset priority <id> <n>
 qakit preset enable/disable <id>
-qakit preset resolve <template>
+qakit preset resolve <template> [--verbose]
+
+qakit suite create <name>
+qakit suite list
+qakit suite switch <id>
+qakit suite info [<id>]
 
 qakit workflow run <id> [-i key=value]
 qakit workflow list
@@ -221,6 +252,7 @@ qakit workflow status
 
 qakit version [--features] [--json]
 qakit check
+qakit self-check [--json]
 qakit self update
 qakit self check
 ```

@@ -1,6 +1,6 @@
 [project]
 name = "qa-kit-cli"
-version = "0.3.0"
+version = "0.4.0"
 description = "QA Kit CLI — AI-assisted QA automation toolkit for Playwright, Cypress, Jest, and more."
 readme = "README.md"
 license = { file = "LICENSE" }

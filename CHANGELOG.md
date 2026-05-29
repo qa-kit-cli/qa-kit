@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-30
+
+### Added
+
+- `qakit self-check` root-level command with `--json` flag and CI-friendly exit codes (mirrors `qakit self check` at root level).
+- `qakit suite` command group: `list`, `create`, `switch`, `info` — manage per-feature QA artifact directories under `.qakit/suites/`.
+- `QAKIT_SUITE` environment variable support in `qakit init`: creates a named suite and sets it as active in `config.json`.
+- `--suite <name>` flag for `qakit init` to create a named suite at initialization time.
+- `active_suite` field in `.qakit/config.json` schema (backwards-compatible).
+- Per-suite directory structure: `.qakit/suites/<NNN>-<slug>/` with scoped memory files.
+- `--verbose`/`-v` flag for `qakit preset resolve` and `qakit extension resolve`: shows all 4 layers with win/skip/no-file status.
+- `LayerResult` dataclass and `resolve_with_trace()` method in `TemplateResolver`.
+- `/qakit.tasks.issues` slash command (37th command) replacing `/qakit.tasks.to-issues`: full GitHub Issues + Jira REST API support, dry-run mode, traceability matrix update.
+- `.devcontainer/devcontainer.json` and `.devcontainer/postCreate.sh` for one-click contributor setup.
+
+### Changed
+
+- `qakit extension install` / `qakit extension uninstall` are now primary commands; `add`/`remove` are aliases with deprecation tip notices.
+- `qakit preset install` / `qakit preset uninstall` added as primary commands; `add`/`remove` are aliases with deprecation tip notices.
+- `qakit integration add` / `qakit integration remove` now print a tip notice pointing to `install`/`uninstall`.
+- `/qakit.tasks.to-issues` renamed to `/qakit.tasks.issues` (template rewritten from 39 to 110+ lines).
+- `ensure_project_layout()` creates `.qakit/suites/` directory.
+
+### Fixed
+
+- Double-decorated Typer commands in `extension.py` (`add`/`install`, `remove`/`uninstall`) split into separate functions to avoid Typer registration conflicts.
+
 ## [0.3.0] — 2026-05-29
 
 ### Added

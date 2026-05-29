@@ -7,12 +7,19 @@ import platform
 import shutil
 import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from packaging.version import InvalidVersion, Version
 
-from qa_kit_cli._console import console, print_error, print_info, print_success, print_table, print_warning
+from qa_kit_cli._console import (
+    console,
+    print_error,
+    print_info,
+    print_success,
+    print_table,
+    print_warning,
+)
 from qa_kit_cli._github_http import safe_fetch_json
 from qa_kit_cli._utils import run_command
 from qa_kit_cli._version import __version__
@@ -45,7 +52,7 @@ register_commands(app)
 @app.callback(invoke_without_command=True)
 def _root_callback(
     ctx: typer.Context,
-    version: Optional[bool] = typer.Option(
+    version: bool | None = typer.Option(
         None,
         "--version",
         "-V",

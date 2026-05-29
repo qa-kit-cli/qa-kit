@@ -381,8 +381,6 @@ def resolve(
     from rich import box
     from rich.table import Table
 
-    from qa_kit_cli.template_resolver import LayerResult
-
     project_root = Path.cwd()
     qakit_dir = ensure_project_layout(project_root)
     resolver = TemplateResolver(qakit_dir)
