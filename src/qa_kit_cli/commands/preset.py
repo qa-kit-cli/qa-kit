@@ -298,14 +298,50 @@ def info(preset_id: str) -> None:
 
 
 @app.command("resolve")
-def resolve(template_name: str) -> None:
+def resolve(
+    template_name: str,
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show all 4 layers, not just the winner."
+    ),
+) -> None:
     """Show the template resolution stack for a given template name.
 
     Example: qakit preset resolve write.playwright.md
     """
+    from rich import box
+    from rich.table import Table
+
+    from qa_kit_cli.template_resolver import LayerResult
+
     project_root = Path.cwd()
     qakit_dir = ensure_project_layout(project_root)
     resolver = TemplateResolver(qakit_dir)
+
+    if verbose:
+        results = resolver.resolve_with_trace(template_name)
+        table = Table(
+            title=f"Resolution stack: {template_name}",
+            show_header=True,
+            header_style="bold cyan",
+            box=box.SIMPLE,
+        )
+        table.add_column("Layer", justify="center")
+        table.add_column("Source")
+        table.add_column("Template path")
+        table.add_column("Status")
+
+        for r in results:
+            path_str = str(r.template_path) if r.template_path else "—"
+            if r.wins:
+                status = "WINS"
+            elif r.template_path is not None:
+                status = "skipped"
+            else:
+                status = "no file"
+            table.add_row(str(r.layer_number), r.layer_label, path_str, status)
+        console.print(table)
+        return
+
     stack = resolver.resolve_stack(template_name)
     if not stack:
         print_warning(f"Template '{template_name}' was not found in any layer.")

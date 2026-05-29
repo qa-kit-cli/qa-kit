@@ -237,3 +237,49 @@ def test_active_preset_read_template_returns_none_when_missing(project_dir) -> N
 
     active = load_active_presets(qakit_dir)
     assert active[0].read_template("nonexistent.md") is None
+
+
+# ---------------------------------------------------------------------------
+# TemplateResolver.resolve_with_trace (Phase 4)
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_with_trace_returns_results(tmp_path) -> None:
+    """resolve_with_trace returns at least 2 layers (override + core)."""
+    from qa_kit_cli.template_resolver import TemplateResolver
+    qakit_dir = ensure_project_layout(tmp_path)
+    resolver = TemplateResolver(qakit_dir)
+    results = resolver.resolve_with_trace("strategy.md")
+    assert len(results) >= 2  # at least override layer + core
+
+
+def test_resolve_with_trace_exactly_one_winner(tmp_path) -> None:
+    """resolve_with_trace marks exactly one layer as the winner."""
+    from qa_kit_cli.template_resolver import TemplateResolver
+    qakit_dir = ensure_project_layout(tmp_path)
+    resolver = TemplateResolver(qakit_dir)
+    results = resolver.resolve_with_trace("strategy.md")
+    winners = [r for r in results if r.wins]
+    assert len(winners) == 1
+
+
+def test_preset_resolve_verbose_shows_all_layers(project_dir, runner=None) -> None:
+    """qakit preset resolve --verbose shows a table with WINS."""
+    from typer.testing import CliRunner
+    from qa_kit_cli import app
+    runner = CliRunner()
+    ensure_project_layout(project_dir)
+    result = runner.invoke(app, ["preset", "resolve", "strategy.md", "--verbose"])
+    assert result.exit_code == 0, result.output
+    assert "WINS" in result.output
+
+
+def test_preset_resolve_non_verbose_shows_winner(project_dir, runner=None) -> None:
+    """qakit preset resolve (without --verbose) also shows WINS for the winner."""
+    from typer.testing import CliRunner
+    from qa_kit_cli import app
+    runner = CliRunner()
+    ensure_project_layout(project_dir)
+    result = runner.invoke(app, ["preset", "resolve", "strategy.md"])
+    assert result.exit_code == 0, result.output
+    assert "WINS" in result.output
