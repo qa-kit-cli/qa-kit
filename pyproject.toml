@@ -37,11 +37,11 @@ dependencies = [
 qakit = "qa_kit_cli:main"
 
 [project.urls]
-Homepage = "https://github.com/qa-kit/qa-kit"
+Homepage = "https://github.com/qa-kit-cli/qa-kit"
 Documentation = "https://qa-kit.dev/docs"
-Repository = "https://github.com/qa-kit/qa-kit"
-Issues = "https://github.com/qa-kit/qa-kit/issues"
-Changelog = "https://github.com/qa-kit/qa-kit/blob/main/CHANGELOG.md"
+Repository = "https://github.com/qa-kit-cli/qa-kit"
+Issues = "https://github.com/qa-kit-cli/qa-kit/issues"
+Changelog = "https://github.com/qa-kit-cli/qa-kit/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]

@@ -58,7 +58,7 @@ class IntegrationCatalogStack(CatalogStackBase):
     def __init__(self, project_root: Path, include_community: bool = False) -> None:
         super().__init__(
             bundled_catalog=project_root / "integrations" / "catalog.json",
-            community_url="https://raw.githubusercontent.com/qa-kit/qa-kit/main/integrations/catalog.community.json",
+            community_url="https://raw.githubusercontent.com/qa-kit-cli/qa-kit/main/integrations/catalog.community.json",
             include_community=include_community,
             key="integrations",
         )
@@ -68,7 +68,7 @@ class ExtensionCatalogStack(CatalogStackBase):
     def __init__(self, project_root: Path, include_community: bool = False) -> None:
         super().__init__(
             bundled_catalog=project_root / "extensions" / "catalog.json",
-            community_url="https://raw.githubusercontent.com/qa-kit/qa-kit/main/extensions/catalog.community.json",
+            community_url="https://raw.githubusercontent.com/qa-kit-cli/qa-kit/main/extensions/catalog.community.json",
             include_community=include_community,
             key="extensions",
         )
@@ -78,7 +78,7 @@ class PresetCatalogStack(CatalogStackBase):
     def __init__(self, project_root: Path, include_community: bool = False) -> None:
         super().__init__(
             bundled_catalog=project_root / "presets" / "catalog.json",
-            community_url="https://raw.githubusercontent.com/qa-kit/qa-kit/main/presets/catalog.community.json",
+            community_url="https://raw.githubusercontent.com/qa-kit-cli/qa-kit/main/presets/catalog.community.json",
             include_community=include_community,
             key="presets",
         )

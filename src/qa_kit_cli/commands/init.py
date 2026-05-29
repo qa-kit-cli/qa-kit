@@ -15,7 +15,7 @@ from qa_kit_cli.shared_infra import ensure_memory_files, refresh_shared_infra
 _CONTEXT_PREAMBLE = """\
 # QA Kit
 
-This project uses [QA Kit](https://github.com/qa-kit/qa-kit) — an AI-assisted QA automation toolkit.
+This project uses [QA Kit](https://github.com/qa-kit-cli/qa-kit) — an AI-assisted QA automation toolkit.
 
 ## Active slash commands
 

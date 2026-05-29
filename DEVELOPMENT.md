@@ -9,7 +9,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/qa-kit/qa-kit.git
+git clone https://github.com/qa-kit-cli/qa-kit.git
 cd qa-kit
 uv sync --extra dev --extra test
 ```

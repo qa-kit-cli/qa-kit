@@ -10,7 +10,7 @@ from qa_kit_cli._assets import get_core_pack
 from qa_kit_cli._github_http import safe_fetch_json
 
 _COMMUNITY_URL = (
-    "https://raw.githubusercontent.com/qa-kit/qa-kit/main/integrations/catalog.community.json"
+    "https://raw.githubusercontent.com/qa-kit-cli/qa-kit/main/integrations/catalog.community.json"
 )
 
 

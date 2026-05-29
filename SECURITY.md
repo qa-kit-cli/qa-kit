@@ -11,7 +11,7 @@
 Please do **not** open a public GitHub issue for security vulnerabilities.
 
 Instead, report them privately via GitHub's Security Advisory feature:
-https://github.com/qa-kit/qa-kit/security/advisories/new
+https://github.com/qa-kit-cli/qa-kit/security/advisories/new
 
 We aim to respond within 72 hours and release a patch within 14 days for confirmed vulnerabilities.
 

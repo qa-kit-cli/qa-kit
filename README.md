@@ -11,13 +11,13 @@ Think of it as [Spec Kit](https://github.com/github/spec-kit) for QA: same archi
 ## Install
 
 ```bash
-uv tool install qa-kit-cli --from git+https://github.com/qa-kit/qa-kit.git
+uv tool install qa-kit-cli --from git+https://github.com/qa-kit-cli/qa-kit.git
 ```
 
 Or with pipx:
 
 ```bash
-pipx install qa-kit-cli --pip-args="git+https://github.com/qa-kit/qa-kit.git"
+pipx install qa-kit-cli --pip-args="git+https://github.com/qa-kit-cli/qa-kit.git"
 ```
 
 ---
