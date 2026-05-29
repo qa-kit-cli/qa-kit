@@ -1,4 +1,4 @@
-"""Interactive gate step."""
+"""Interactive gate step — pauses the workflow until a user approves."""
 
 from __future__ import annotations
 
@@ -15,5 +15,8 @@ class GateStep(StepBase):
             allowed = bool(step.get("default", True))
         else:
             allowed = confirm(prompt, default=bool(step.get("default", True)))
-        return StepResult(allowed, "approved" if allowed else "rejected")
 
+        if allowed:
+            return StepResult(success=True, output="approved")
+        # Signal a deliberate pause (not a failure) so the engine sets status="paused"
+        return StepResult(success=False, output="rejected", paused=True)

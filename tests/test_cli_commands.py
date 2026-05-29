@@ -137,7 +137,8 @@ class TestPresetCommands:
         runner.invoke(app, ["preset", "add", "playwright"])
         result = runner.invoke(app, ["preset", "list"])
         assert result.exit_code == 0, result.output
-        assert "playwright" in result.output
+        # Rich may truncate "playwright" → "playwrig…" in narrow terminal columns
+        assert "playwrig" in result.output
 
     def test_priority_updates_value(self, project_dir: Path, runner: CliRunner) -> None:
         ensure_project_layout(project_dir)

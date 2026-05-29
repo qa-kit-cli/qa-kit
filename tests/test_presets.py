@@ -120,15 +120,25 @@ def test_preset_manager_deduplication_on_readd(project_dir) -> None:
     assert len(playwright_entries) == 1
 
 
-def test_preset_manager_default_priority_increments(project_dir) -> None:
+def test_preset_manager_default_priority_is_10(project_dir) -> None:
+    """Default priority for new presets is 10 (not insertion order)."""
     ensure_project_layout(project_dir)
     manager = PresetManager(project_dir)
     manager.add("playwright")
     manager.add("cypress")
 
     entries = {e["id"]: e for e in manager.list()}
-    assert entries["playwright"]["priority"] == 1
-    assert entries["cypress"]["priority"] == 2
+    assert entries["playwright"]["priority"] == 10
+    assert entries["cypress"]["priority"] == 10
+
+
+def test_preset_manager_custom_priority_stored(project_dir) -> None:
+    ensure_project_layout(project_dir)
+    manager = PresetManager(project_dir)
+    manager.add("playwright", priority=5)
+
+    entries = {e["id"]: e for e in manager.list()}
+    assert entries["playwright"]["priority"] == 5
 
 
 def test_preset_manager_remove_returns_false_for_nonexistent(project_dir) -> None:

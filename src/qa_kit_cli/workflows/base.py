@@ -21,6 +21,7 @@ class StepResult:
     success: bool
     output: str = ""
     data: dict[str, Any] = field(default_factory=dict)
+    paused: bool = False  # True when a gate step explicitly pauses the workflow
 
 
 class StepBase(ABC):

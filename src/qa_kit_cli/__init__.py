@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import platform
 import shutil
 import sys
 from pathlib import Path
+from typing import Optional
 
 import typer
 
@@ -14,15 +16,67 @@ from qa_kit_cli._utils import run_command
 from qa_kit_cli._version import __version__
 from qa_kit_cli.commands import register_commands
 
+_FEATURE_FLAGS: dict[str, bool] = {
+    "qa_lifecycle_commands": True,
+    "skills_mode": True,
+    "preset_resolution": True,
+    "extension_resolution": True,
+    "workflow_engine": True,
+    "catalog_stack": True,
+    "integration_multi_install_safety": True,
+    "machine_readable_version": True,
+}
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
 app = typer.Typer(help="QA Kit CLI - AI-assisted QA automation toolkit.")
 self_app = typer.Typer(help="Self-management commands for qakit.")
 app.add_typer(self_app, name="self")
 register_commands(app)
 
 
+@app.callback(invoke_without_command=True)
+def _root_callback(
+    ctx: typer.Context,
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        "-V",
+        is_eager=True,
+        callback=_version_callback,
+        help="Show version and exit.",
+    ),
+) -> None:
+    """QA Kit CLI — risk-driven QA automation: policy → strategy → test plan → tests → CI → coverage → release gate."""
+    if ctx.invoked_subcommand is None and version is None:
+        typer.echo(ctx.get_help())
+
+
 @app.command("version")
-def version_command() -> None:
+def version_command(
+    features: bool = typer.Option(False, "--features", help="Show feature flags."),
+    as_json: bool = typer.Option(False, "--json", help="Output as JSON (use with --features)."),
+) -> None:
     """Show CLI version and environment details."""
+    if features:
+        if as_json:
+            payload = {
+                "version": __version__,
+                "python": sys.version.split()[0],
+                "platform": platform.system(),
+                "features": _FEATURE_FLAGS,
+            }
+            typer.echo(json.dumps(payload, indent=2))
+        else:
+            rows = [[k, "yes" if v else "no"] for k, v in _FEATURE_FLAGS.items()]
+            print_table(["Feature", "Enabled"], rows, title=f"QA Kit {__version__} — Feature Flags")
+        return
+
     rows = [
         ["qakit", __version__],
         ["python", sys.version.split()[0]],

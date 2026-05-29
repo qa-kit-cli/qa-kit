@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import platform
 import shutil
 from pathlib import Path
 from typing import Any, List, Optional
@@ -10,12 +11,18 @@ import typer
 
 from qa_kit_cli._console import print_info, print_success, print_warning
 from qa_kit_cli._integration_options import parse_integration_options
+from qa_kit_cli._utils import save_json
 from qa_kit_cli.agents import CommandRegistrar, SkillRegistrar, detect_active_integration
 from qa_kit_cli.integration_state import IntegrationState
 from qa_kit_cli.integrations import get_integration
 from qa_kit_cli.presets import PresetManager
 from qa_kit_cli.project_config import ProjectConfig
 from qa_kit_cli.shared_infra import ensure_memory_files, refresh_shared_infra
+
+
+def _default_script() -> str:
+    """Return platform-appropriate default script type."""
+    return "ps" if platform.system() == "Windows" else "sh"
 
 _CONTEXT_PREAMBLE = """\
 # QA Kit
@@ -89,11 +96,25 @@ def init_command(
     ignore_agent_tools: bool = typer.Option(
         False, "--ignore-agent-tools", help="Skip checking whether agent CLIs exist."
     ),
-    script: str = typer.Option(
-        "ps", "--script", help="Platform script type: 'sh' (bash) or 'ps' (PowerShell)."
+    script: Optional[str] = typer.Option(
+        None, "--script", help="Platform script type: 'sh' (bash) or 'ps' (PowerShell). Defaults to platform-appropriate value."
+    ),
+    no_git: bool = typer.Option(
+        False, "--no-git", help="Skip git repository initialization."
+    ),
+    branch_numbering: str = typer.Option(
+        "sequential",
+        "--branch-numbering",
+        help="Branch numbering scheme: 'sequential' or 'timestamp'.",
     ),
 ) -> None:
     """Scaffold .qakit and install slash commands to the active integration."""
+    # Validate branch_numbering
+    if branch_numbering not in ("sequential", "timestamp"):
+        raise typer.BadParameter(
+            f"--branch-numbering must be 'sequential' or 'timestamp', got '{branch_numbering}'."
+        )
+
     # 1. Resolve target directory
     if project_name and project_name != "." and not here:
         project_root = Path.cwd() / project_name
@@ -107,15 +128,18 @@ def init_command(
     else:
         project_root = Path.cwd()
 
-    # 2. Parse integration options
+    # 2. Resolve effective script type (platform-aware default)
+    effective_script = script if script in ("sh", "ps") else _default_script()
+
+    # 3. Parse integration options
     int_opts: dict[str, Any] = parse_integration_options(integration_options)
     skills_mode = bool(int_opts.get("skills", False))
 
-    # 3. Scaffold .qakit and copy bundled assets
+    # 4. Scaffold .qakit and copy bundled assets
     qakit_dir = refresh_shared_infra(project_root)
     ensure_memory_files(project_root)
 
-    # 4. Install presets first so their overrides apply to command rendering
+    # 5. Install presets first so their overrides apply to command rendering
     if preset:
         manager = PresetManager(project_root)
         for p in preset:
@@ -125,13 +149,13 @@ def init_command(
             except FileNotFoundError:
                 print_warning(f"Preset '{p}' not found — skipping.")
 
-    # 5. Resolve integration
+    # 6. Resolve integration
     selected = integration or detect_active_integration(project_root)
     integration_cls = get_integration(selected)
     if integration_cls is None:
         raise typer.BadParameter(f"Unknown integration: {selected}")
 
-    # 6. Optionally verify agent CLI is installed
+    # 7. Optionally verify agent CLI is installed
     if not ignore_agent_tools and integration_cls.config.get("requires_cli"):
         cli_names = _CLI_MAP.get(selected, [])
         if cli_names and not any(shutil.which(c) for c in cli_names):
@@ -142,7 +166,7 @@ def init_command(
                 "  Pass --ignore-agent-tools to suppress this warning."
             )
 
-    # 7. Install commands or skills
+    # 8. Install commands or skills
     if skills_mode and integration_cls.supports_skills:
         skill_reg = SkillRegistrar()
         installed = skill_reg.install_for_integration(project_root, qakit_dir, selected)
@@ -152,14 +176,14 @@ def init_command(
         installed = cmd_reg.install_for_integration(project_root, qakit_dir, selected)
         mode_label = "commands"
 
-    # 8. Write context file
+    # 9. Write context file
     context_path = integration_cls.get_context_file(project_root)
     if context_path and not context_path.exists():
         context_path.parent.mkdir(parents=True, exist_ok=True)
         context_path.write_text(_CONTEXT_PREAMBLE, encoding="utf-8")
         print_info(f"Created {context_path.relative_to(project_root)}")
 
-    # 9. Persist integration state
+    # 10. Persist integration state
     state = IntegrationState.load(qakit_dir)
     meta: dict[str, Any] = {
         "name": integration_cls.config.get("name", selected),
@@ -171,11 +195,28 @@ def init_command(
     state.set_active(selected)
     state.save(qakit_dir)
 
-    # 10. Persist project config
+    # 11. Persist project config
     cfg = ProjectConfig.load(qakit_dir)
-    if script in ("sh", "ps"):
-        cfg.script = script
+    cfg.script = effective_script
+    cfg.branch_numbering = branch_numbering
     cfg.save(qakit_dir)
+
+    # 12. Persist init options snapshot
+    save_json(
+        qakit_dir / "init-options.json",
+        {
+            "schema_version": 1,
+            "project_name": project_name,
+            "here": here,
+            "integration": selected,
+            "integration_options": integration_options,
+            "presets": list(preset),
+            "script": effective_script,
+            "no_git": no_git,
+            "branch_numbering": branch_numbering,
+            "ignore_agent_tools": ignore_agent_tools,
+        },
+    )
 
     print_success(f"Initialized QA Kit in {project_root}")
     print_info(f"Active integration: {selected} (mode: {mode_label})")

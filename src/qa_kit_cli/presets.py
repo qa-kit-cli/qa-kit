@@ -147,7 +147,7 @@ class PresetManager:
     def list(self) -> list[dict[str, Any]]:
         return list(self._state().get("presets", []))
 
-    def add(self, preset_ref: str) -> dict[str, Any]:
+    def add(self, preset_ref: str, priority: int = 10) -> dict[str, Any]:
         src = self.registry.resolve(preset_ref)
         manifest = PresetManifest.load_from_dir(src)
         dst = self.local_dir / manifest.id
@@ -157,7 +157,7 @@ class PresetManager:
 
         data = self._state()
         presets = [p for p in data["presets"] if p.get("id") != manifest.id]
-        presets.append({"id": manifest.id, "enabled": True, "priority": len(presets) + 1})
+        presets.append({"id": manifest.id, "enabled": True, "priority": priority})
         data["presets"] = presets
         self._save(data)
         return presets[-1]

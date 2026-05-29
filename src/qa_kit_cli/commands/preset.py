@@ -23,22 +23,49 @@ def _manager() -> PresetManager:
     return PresetManager(project_root)
 
 
+def _reregister_active(project_root: Path, qakit_dir: Path) -> None:
+    """Reinstall commands for the active integration so preset templates apply."""
+    from qa_kit_cli.agents import CommandRegistrar, SkillRegistrar
+    from qa_kit_cli.integration_state import IntegrationState
+    from qa_kit_cli.integrations import get_integration
+
+    state = IntegrationState.load(qakit_dir)
+    key = state.active_key
+    if not key:
+        return
+    meta = state.installed.get(key, {})
+    skills_mode = meta.get("mode") == "skills"
+    int_cls = get_integration(key)
+    if skills_mode and int_cls and int_cls.supports_skills:
+        SkillRegistrar().install_for_integration(project_root, qakit_dir, key)
+    else:
+        CommandRegistrar().install_for_integration(project_root, qakit_dir, key)
+
+
 @app.command("add")
 def add(
     preset_ref: str,
+    priority: int = typer.Option(10, "--priority", help="Preset priority (lower = higher priority). Default: 10."),
     dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
     from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
 ) -> None:
     """Add a preset (bundled ID, local --dev path, or --from URL)."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
     source = from_url or dev or preset_ref
-    entry = _manager().add(source)
-    print_success(f"Added preset '{entry['id']}'.")
+    manager = PresetManager(project_root)
+    entry = manager.add(source, priority=priority)
+    _reregister_active(project_root, qakit_dir)
+    print_success(f"Added preset '{entry['id']}' (priority={priority}).")
 
 
 @app.command("remove")
 def remove(preset_id: str) -> None:
     """Remove an installed preset."""
-    if _manager().remove(preset_id):
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    if PresetManager(project_root).remove(preset_id):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Removed preset '{preset_id}'.")
         return
     print_warning(f"Preset '{preset_id}' was not installed.")
@@ -46,24 +73,48 @@ def remove(preset_id: str) -> None:
 
 @app.command("list")
 def list_cmd() -> None:
-    """List installed presets."""
-    entries = _manager().list()
-    rows = [
-        [
-            e.get("id", ""),
-            str(e.get("priority", "")),
+    """List installed presets with id, name, version, priority, status, template count, description."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    manager = PresetManager(project_root)
+    entries = manager.list()
+    rows: list[list[str]] = []
+    for e in entries:
+        preset_id = str(e.get("id", ""))
+        name = version_str = description = template_count = ""
+        preset_path = qakit_dir / "presets" / preset_id
+        manifest_file = preset_path / "preset.yml"
+        if manifest_file.exists():
+            try:
+                import yaml as _yaml
+                d = _yaml.safe_load(manifest_file.read_text(encoding="utf-8")) or {}
+                name = str(d.get("name", preset_id))
+                version_str = str(d.get("version", ""))
+                description = str(d.get("description", ""))
+                tmpl_dir = preset_path / "templates" / "commands"
+                template_count = str(len(list(tmpl_dir.glob("*.md")))) if tmpl_dir.exists() else "0"
+            except Exception:
+                pass
+        rows.append([
+            preset_id,
+            name,
+            version_str,
+            str(e.get("priority", 10)),
             "enabled" if e.get("enabled", True) else "disabled",
-        ]
-        for e in entries
-    ]
-    print_table(["Preset", "Priority", "Status"], rows, title="Presets")
+            template_count,
+            description[:60],
+        ])
+    print_table(["ID", "Name", "Version", "Priority", "Status", "Templates", "Description"], rows, title="Installed Presets")
 
 
 @app.command("priority")
 @app.command("set-priority")
 def priority(preset_id: str, value: int) -> None:
     """Set the priority of a preset (lower number = higher priority)."""
-    if _manager().set_priority(preset_id, value):
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    if PresetManager(project_root).set_priority(preset_id, value):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Set preset '{preset_id}' priority to {value}.")
         return
     print_warning(f"Preset '{preset_id}' was not found.")
@@ -72,7 +123,10 @@ def priority(preset_id: str, value: int) -> None:
 @app.command("enable")
 def enable(preset_id: str) -> None:
     """Enable a preset."""
-    if _manager().set_enabled(preset_id, True):
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    if PresetManager(project_root).set_enabled(preset_id, True):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Enabled preset '{preset_id}'.")
         return
     print_warning(f"Preset '{preset_id}' was not found.")
@@ -81,7 +135,10 @@ def enable(preset_id: str) -> None:
 @app.command("disable")
 def disable(preset_id: str) -> None:
     """Disable a preset without removing it."""
-    if _manager().set_enabled(preset_id, False):
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    if PresetManager(project_root).set_enabled(preset_id, False):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Disabled preset '{preset_id}'.")
         return
     print_warning(f"Preset '{preset_id}' was not found.")

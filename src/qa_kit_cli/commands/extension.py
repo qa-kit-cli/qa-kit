@@ -10,6 +10,7 @@ import typer
 from qa_kit_cli._console import print_info, print_success, print_table, print_warning
 from qa_kit_cli.extensions import ExtensionManager
 from qa_kit_cli.shared_infra import ensure_project_layout
+from qa_kit_cli.template_resolver import TemplateResolver
 
 app = typer.Typer(help="Manage QA Kit extensions.")
 catalog_app = typer.Typer(help="Manage extension catalogs.")
@@ -22,19 +23,60 @@ def _manager() -> ExtensionManager:
     return ExtensionManager(project_root)
 
 
+def _reregister_active(project_root: Path, qakit_dir: Path) -> None:
+    """Reinstall commands for the active integration so extension templates apply."""
+    from qa_kit_cli.agents import CommandRegistrar, SkillRegistrar
+    from qa_kit_cli.integration_state import IntegrationState
+    from qa_kit_cli.integrations import get_integration
+
+    state = IntegrationState.load(qakit_dir)
+    key = state.active_key
+    if not key:
+        return
+    meta = state.installed.get(key, {})
+    skills_mode = meta.get("mode") == "skills"
+    int_cls = get_integration(key)
+    if skills_mode and int_cls and int_cls.supports_skills:
+        SkillRegistrar().install_for_integration(project_root, qakit_dir, key)
+    else:
+        CommandRegistrar().install_for_integration(project_root, qakit_dir, key)
+
+
 @app.command("add")
 @app.command("install")
-def add(extension_ref: str) -> None:
-    """Add an extension."""
-    entry = _manager().add(extension_ref)
-    print_success(f"Added extension '{entry['id']}'.")
+def add(
+    extension_ref: str,
+    priority: int = typer.Option(10, "--priority", help="Extension priority (lower = higher priority). Default: 10."),
+    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+) -> None:
+    """Add an extension (bundled ID, local --dev path, or --from URL)."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    source = from_url or dev or extension_ref
+    manager = ExtensionManager(project_root)
+    entry = manager.add(source, priority=priority)
+    _reregister_active(project_root, qakit_dir)
+    print_success(f"Added extension '{entry['id']}' (priority={priority}).")
 
 
 @app.command("remove")
 @app.command("uninstall")
-def remove(extension_id: str) -> None:
+def remove(
+    extension_id: str,
+    keep_config: bool = typer.Option(
+        False, "--keep-config", help="Preserve extension config files (back them up instead of deleting)."
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Skip confirmation and remove managed files immediately."
+    ),
+) -> None:
     """Remove an installed extension."""
-    if _manager().remove(extension_id):
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    manager = ExtensionManager(project_root)
+    if manager.remove(extension_id, keep_config=keep_config, force=force):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Removed extension '{extension_id}'.")
         return
     print_warning(f"Extension '{extension_id}' was not installed.")
@@ -62,24 +104,63 @@ def update(
 
 
 @app.command("list")
-def list_cmd() -> None:
-    """List installed extensions."""
-    entries = _manager().list()
-    rows = [
-        [
-            e.get("id", ""),
-            "enabled" if e.get("enabled", True) else "disabled",
-            str(e.get("priority", "")),
-        ]
-        for e in entries
-    ]
-    print_table(["Extension", "Status", "Priority"], rows, title="Extensions")
+def list_cmd(
+    available: bool = typer.Option(False, "--available", help="Show catalog/bundled extensions not yet installed."),
+    all_exts: bool = typer.Option(False, "--all", help="Show both installed and available extensions."),
+) -> None:
+    """List installed (and optionally available) extensions."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    manager = ExtensionManager(project_root)
+    installed_entries = manager.list()
+    installed_ids = {e.get("id") for e in installed_entries}
+
+    rows: list[list[str]] = []
+
+    if not available:
+        for e in installed_entries:
+            ext_path = qakit_dir / "extensions" / str(e.get("id", ""))
+            # Count commands from extension.yml if available
+            cmd_count = "-"
+            hook_count = "-"
+            try:
+                import yaml as _yaml
+                mf = ext_path / "extension.yml"
+                if mf.exists():
+                    d = _yaml.safe_load(mf.read_text(encoding="utf-8")) or {}
+                    cmd_count = str(len(d.get("commands", {})))
+                    hook_count = str(len(d.get("hooks", [])))
+            except Exception:
+                pass
+            rows.append([
+                str(e.get("id", "")),
+                str(e.get("name", "")),
+                str(e.get("version", "")),
+                str(e.get("priority", 10)),
+                "enabled" if e.get("enabled", True) else "disabled",
+                cmd_count,
+                hook_count,
+            ])
+        print_table(["ID", "Name", "Version", "Priority", "Status", "Commands", "Hooks"], rows, title="Installed Extensions")
+        return
+
+    # --available or --all: show bundled extensions
+    bundled = manager.registry.list_bundled()
+    for bid in bundled:
+        status = "installed" if bid in installed_ids else "available"
+        if available and status == "installed":
+            continue
+        rows.append([bid, "", "", "", status, "", ""])
+    print_table(["ID", "Name", "Version", "Priority", "Status", "Commands", "Hooks"], rows, title="Extensions")
 
 
 @app.command("enable")
 def enable(extension_id: str) -> None:
     """Enable an extension."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
     if _manager().set_enabled(extension_id, True):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Enabled extension '{extension_id}'.")
         return
     print_warning(f"Extension '{extension_id}' was not found.")
@@ -88,7 +169,10 @@ def enable(extension_id: str) -> None:
 @app.command("disable")
 def disable(extension_id: str) -> None:
     """Disable an extension without removing it."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
     if _manager().set_enabled(extension_id, False):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Disabled extension '{extension_id}'.")
         return
     print_warning(f"Extension '{extension_id}' was not found.")
@@ -97,7 +181,10 @@ def disable(extension_id: str) -> None:
 @app.command("set-priority")
 def set_priority(extension_id: str, value: int) -> None:
     """Set the priority of an extension (lower = higher priority in hooks)."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
     if _manager().set_priority(extension_id, value):
+        _reregister_active(project_root, qakit_dir)
         print_success(f"Set extension '{extension_id}' priority to {value}.")
         return
     print_warning(f"Extension '{extension_id}' was not found.")
@@ -145,6 +232,27 @@ def info(extension_id: str) -> None:
     hooks = data.get("hooks", [])
     if hooks:
         print_info(f"Hooks: {', '.join(hooks)}")
+
+
+@app.command("resolve")
+def resolve(template_name: str) -> None:
+    """Show the 4-layer template resolution stack for a given template name (includes extensions).
+
+    Example: qakit extension resolve write.playwright.md
+    """
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    resolver = TemplateResolver(qakit_dir)
+    stack = resolver.resolve_stack(template_name)
+    if not stack:
+        print_warning(f"Template '{template_name}' was not found in any layer.")
+        raise typer.Exit(1)
+
+    rows: list[list[str]] = []
+    for layer, path, wins in stack:
+        winner = "WINS" if wins else ""
+        rows.append([layer, str(path.relative_to(project_root) if path.is_relative_to(project_root) else path), winner])
+    print_table(["Layer", "Path", ""], rows, title=f"Resolution stack: {template_name}")
 
 
 # --- catalog subcommands ---

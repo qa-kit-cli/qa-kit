@@ -17,6 +17,7 @@ class IntegrationBase(ABC):
 
     supports_skills: bool = False
     default_mode: str = "commands"  # "commands" | "skills"
+    multi_install_safe: bool = False  # True if the integration has a fully isolated command dir
 
     @classmethod
     def get_commands_dir(cls, project_root: Path) -> Path:

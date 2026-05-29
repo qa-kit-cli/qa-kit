@@ -25,6 +25,7 @@ class ClaudeIntegration(MarkdownIntegration):
     context_file = ".claude/CLAUDE.md"
     supports_skills = True
     default_mode = "commands"
+    multi_install_safe = True
 
     @classmethod
     def get_skills_dir(cls, project_root: Path) -> Path:

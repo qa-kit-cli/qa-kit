@@ -167,7 +167,9 @@ class ExtensionManager:
     def list(self) -> list[dict[str, Any]]:
         return list(self._state().get("extensions", []))
 
-    def add(self, extension_ref: str) -> dict[str, Any]:
+    def add(self, extension_ref: str, priority: int = 10) -> dict[str, Any]:
+        import datetime
+
         src = self.registry.resolve(extension_ref)
         manifest = ExtensionManifest.load_from_dir(src)
         dst = self.local_dir / manifest.id
@@ -177,18 +179,37 @@ class ExtensionManager:
 
         data = self._state()
         extensions = [e for e in data["extensions"] if e.get("id") != manifest.id]
-        extensions.append({"id": manifest.id, "enabled": True})
+        extensions.append({
+            "id": manifest.id,
+            "name": manifest.name,
+            "version": manifest.version,
+            "priority": priority,
+            "enabled": True,
+            "source": str(src),
+            "installed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        })
         data["extensions"] = extensions
         self._save(data)
         return extensions[-1]
 
-    def remove(self, extension_id: str) -> bool:
+    def remove(self, extension_id: str, keep_config: bool = False, force: bool = False) -> bool:
+        """Remove an extension.
+
+        keep_config: leave config files in place.
+        force: skip confirmation and remove managed files without backup.
+        """
         data = self._state()
         before = len(data["extensions"])
         data["extensions"] = [e for e in data["extensions"] if e.get("id") != extension_id]
         self._save(data)
         target = self.local_dir / extension_id
-        if target.exists():
+        if target.exists() and not keep_config:
+            shutil.rmtree(target)
+        elif target.exists() and keep_config:
+            backup = self.local_dir / f"{extension_id}.bak"
+            if backup.exists():
+                shutil.rmtree(backup)
+            shutil.copytree(target, backup)
             shutil.rmtree(target)
         return len(data["extensions"]) != before
 

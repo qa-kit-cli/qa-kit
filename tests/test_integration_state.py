@@ -55,13 +55,14 @@ def test_integration_state_remove_nonexistent_is_silent() -> None:
     assert not state.is_installed("never-added")
 
 
-def test_integration_state_schema_version_preserved(project_dir) -> None:
+def test_integration_state_schema_version_is_current(project_dir) -> None:
+    """Saved state should use current schema version (2)."""
     qakit_dir = ensure_project_layout(project_dir)
     state = IntegrationState()
     state.save(qakit_dir)
 
     loaded = IntegrationState.load(qakit_dir)
-    assert loaded.schema_version == 1
+    assert loaded.schema_version == 2
 
 
 def test_integration_state_set_active_changes_active_key(project_dir) -> None:

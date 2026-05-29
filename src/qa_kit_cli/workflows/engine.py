@@ -7,13 +7,26 @@ from typing import Any
 
 import yaml
 
-from qa_kit_cli._console import print_info
+from qa_kit_cli._console import print_info, print_warning
 from qa_kit_cli.extensions import ExtensionManager, HookExecutor
 from qa_kit_cli.workflows.base import StepContext, StepResult
 from qa_kit_cli.workflows.catalog import WorkflowCatalog
 from qa_kit_cli.workflows.expressions import resolve_expressions
+from qa_kit_cli.workflows.input_schema import validate_and_apply
 from qa_kit_cli.workflows.run_state import RunState, list_runs
-from qa_kit_cli.workflows.steps import CommandStep, GateStep, IfStep, ParallelStep, ShellStep
+from qa_kit_cli.workflows.steps import (
+    CommandStep,
+    DoWhileStep,
+    FanInStep,
+    FanOutStep,
+    GateStep,
+    IfStep,
+    ParallelStep,
+    PromptStep,
+    ShellStep,
+    SwitchStep,
+    WhileStep,
+)
 
 
 def _command_to_hook_prefix(command_id: str) -> str | None:
@@ -29,12 +42,19 @@ class WorkflowEngine:
         self.qakit_dir = qakit_dir
         self.catalog = WorkflowCatalog(project_root, qakit_dir)
         self.context = StepContext(project_root, qakit_dir, inputs={}, non_interactive=non_interactive)
-        self._dispatch = {
+        self._dispatch: dict[str, Any] = {
             "command": CommandStep(),
             "shell": ShellStep(),
             "gate": GateStep(),
             "parallel": ParallelStep(),
             "if": IfStep(),
+            # Schema-recognised but not yet fully implemented:
+            "prompt": PromptStep(),
+            "switch": SwitchStep(),
+            "while": WhileStep(),
+            "do-while": DoWhileStep(),
+            "fan-out": FanOutStep(),
+            "fan-in": FanInStep(),
         }
         ext_manager = ExtensionManager(project_root)
         self._active_manifests = ext_manager.active_manifests()
@@ -51,7 +71,7 @@ class WorkflowEngine:
         step_type = str(step.get("type", "command"))
         runner = self._dispatch.get(step_type)
         if runner is None:
-            return StepResult(False, f"Unsupported step type: {step_type}")
+            return StepResult(False, f"Unknown step type: {step_type}")
         resolved = resolve_expressions(step, self.context.inputs)
 
         hook_prefix: str | None = None
@@ -75,6 +95,18 @@ class WorkflowEngine:
     ) -> tuple[StepResult, RunState]:
         workflow = self._load_workflow(workflow_id)
         effective_inputs = inputs or {}
+
+        # Validate + apply defaults from input schema
+        input_schema: list[dict[str, Any]] = workflow.get("inputs", [])
+        if input_schema:
+            try:
+                effective_inputs = validate_and_apply(effective_inputs, input_schema)
+            except ValueError as exc:
+                empty_state = RunState.new(workflow_id, effective_inputs)
+                empty_state.status = "failed"
+                empty_state.save(self._runs_dir)
+                return StepResult(False, str(exc)), empty_state
+
         self.context.inputs = effective_inputs
 
         state = run_state or RunState.new(workflow_id, effective_inputs)
@@ -95,16 +127,16 @@ class WorkflowEngine:
             state.append_log(self._runs_dir, {"step": step_id, "success": result.success, "output": result.output})
 
             if not result.success:
+                if result.paused:
+                    # Gate deliberately paused — allow resume later
+                    state.status = "paused"
+                    state.current_step = idx - 1  # re-run gate on resume
+                    state.save(self._runs_dir)
+                    print_warning("Workflow paused at gate step. Resume with: qakit workflow resume " + state.run_id)
+                    return result, state
                 state.status = "failed"
                 state.save(self._runs_dir)
                 return result, state
-
-            if isinstance(runner := self._dispatch.get(str(step.get("type", "command"))), GateStep):
-                # Gate step that paused
-                if not result.success:
-                    state.status = "paused"
-                    state.save(self._runs_dir)
-                    return result, state
 
         state.status = "completed"
         state.save(self._runs_dir)
