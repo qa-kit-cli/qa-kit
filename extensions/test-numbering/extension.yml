@@ -1,0 +1,10 @@
+id: test-numbering
+name: Test Numbering
+version: 0.1.0
+description: Assigns canonical test IDs for traceability.
+hooks:
+  - after_write_playwright
+  - after_write_jest
+commands:
+  after_write_playwright: "grep -rn \"test('\" tests/ 2>/dev/null | grep -v 'TC-[0-9]' | head -20 | awk -F: '{print \"[test-numbering] Missing TC-NNN in: \" $1 \":\" $2}' ; echo '[test-numbering] Run /qakit.coverage to verify all tests have TC-NNN IDs'"
+  after_write_jest: "grep -rn \"it('\\|test('\" tests/ src/ 2>/dev/null | grep -v 'TC-[0-9]' | head -20 | awk -F: '{print \"[test-numbering] Missing TC-NNN in: \" $1 \":\" $2}' ; echo '[test-numbering] Run /qakit.coverage to verify all tests have TC-NNN IDs'"

@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "extensions": [
+    {
+      "id": "git",
+      "name": "Git Workflow",
+      "version": "0.1.0",
+      "bundled": true
+    },
+    {
+      "id": "coverage-gate",
+      "name": "Coverage Gate",
+      "version": "0.1.0",
+      "bundled": true
+    },
+    {
+      "id": "test-numbering",
+      "name": "Test Numbering",
+      "version": "0.1.0",
+      "bundled": true
+    },
+    {
+      "id": "allure",
+      "name": "Allure Reporting",
+      "version": "0.2.0",
+      "bundled": true
+    },
+    {
+      "id": "testrail",
+      "name": "TestRail Sync",
+      "version": "0.2.0",
+      "bundled": true
+    },
+    {
+      "id": "jira",
+      "name": "Jira Defect Sync",
+      "version": "0.2.0",
+      "bundled": true
+    }
+  ]
+}

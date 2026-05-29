@@ -1,0 +1,10 @@
+id: coverage-gate
+name: Coverage Gate
+version: 0.1.0
+description: Enforces minimum coverage thresholds.
+hooks:
+  - before_ci_github_actions
+  - after_write_playwright
+commands:
+  before_ci_github_actions: "grep -q 'coverage' .qakit/memory/test-policy.md 2>/dev/null && echo '[coverage-gate] Coverage thresholds found in test-policy.md' || echo '[coverage-gate] WARNING: No coverage thresholds defined in .qakit/memory/test-policy.md — run /qakit.policy first'"
+  after_write_playwright: "echo '[coverage-gate] Reminder: add coverage threshold check to playwright.config.ts and verify CI workflow enforces the threshold from test-policy.md'"

@@ -1,0 +1,11 @@
+id: cypress
+name: Cypress
+version: 0.1.0
+description: Cypress component and E2E testing conventions — overrides write.cypress and ci.github-actions.
+compositions:
+  - command: qakit.write.cypress
+    mode: replace
+    template: write.cypress.md
+  - command: qakit.ci.github-actions
+    mode: replace
+    template: ci.github-actions.md

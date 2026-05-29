@@ -1,0 +1,16 @@
+id: qakit
+name: QA Kit Default Workflow
+version: 0.1.0
+steps:
+  - id: strategy
+    type: command
+    command: qakit.strategy
+  - id: testplan
+    type: command
+    command: qakit.testplan
+  - id: write
+    type: command
+    command: qakit.write.playwright
+  - id: ci
+    type: command
+    command: qakit.ci.github-actions

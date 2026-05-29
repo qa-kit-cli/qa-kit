@@ -1,0 +1,8 @@
+id: jira
+name: Jira Defect Sync
+version: 0.2.0
+description: Create Jira issues from bug report outputs.
+hooks:
+  - after_review_bugreport
+commands:
+  after_review_bugreport: "[ -z \"$JIRA_URL\" ] && echo '[jira] JIRA_URL not set — skipping ticket creation. Set JIRA_URL, JIRA_USER, and JIRA_API_TOKEN to enable auto-create.' || echo '[jira] JIRA_URL detected — copy the bug report above and create the ticket at: '$JIRA_URL'/secure/CreateIssue.jspa'"

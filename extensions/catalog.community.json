@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "extensions": [
+    { "id": "percy", "name": "Percy", "version": "0.1.0" },
+    { "id": "browserstack", "name": "BrowserStack", "version": "0.1.0" },
+    { "id": "lighthouse", "name": "Lighthouse", "version": "0.1.0" },
+    { "id": "axe-reporter", "name": "Axe Reporter", "version": "0.1.0" },
+    { "id": "k6-load", "name": "k6 Load", "version": "0.1.0" },
+    { "id": "cypress-cloud", "name": "Cypress Cloud", "version": "0.1.0" }
+  ]
+}

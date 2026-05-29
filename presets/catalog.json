@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "playwright",
+      "name": "Playwright",
+      "version": "0.1.0",
+      "bundled": true
+    },
+    {
+      "id": "cypress",
+      "name": "Cypress",
+      "version": "0.1.0",
+      "bundled": true
+    },
+    {
+      "id": "lean-qa",
+      "name": "Lean QA",
+      "version": "0.1.0",
+      "bundled": true
+    },
+    {
+      "id": "full-stack",
+      "name": "Full Stack QA",
+      "version": "0.2.0",
+      "bundled": false
+    },
+    {
+      "id": "enterprise-qa",
+      "name": "Enterprise QA",
+      "version": "0.3.0",
+      "bundled": false
+    }
+  ]
+}

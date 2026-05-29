@@ -1,0 +1,10 @@
+id: allure
+name: Allure Reporting
+version: 0.2.0
+description: Allure report generation and publication hooks.
+hooks:
+  - after_ci_github_actions
+  - after_ci_jenkins
+commands:
+  after_ci_github_actions: "echo '[allure] Reminder: add allure-results artifact upload and simple-elf/allure-report-action step to the generated CI workflow (see /qakit.ci.report for the template)'"
+  after_ci_jenkins: "echo '[allure] Reminder: add allure plugin publisher to the generated Jenkinsfile post block (see /qakit.ci.report for the template)'"

@@ -1,0 +1,20 @@
+id: playwright
+name: Playwright
+version: 0.1.0
+description: Playwright + TypeScript — opinionated conventions for write.playwright, write.pom, write.visual, write.a11y, and ci.github-actions.
+compositions:
+  - command: qakit.write.playwright
+    mode: replace
+    template: write.playwright.md
+  - command: qakit.write.pom
+    mode: replace
+    template: write.pom.md
+  - command: qakit.write.visual
+    mode: replace
+    template: write.visual.md
+  - command: qakit.write.a11y
+    mode: append
+    template: write.a11y.md
+  - command: qakit.ci.github-actions
+    mode: replace
+    template: ci.github-actions.md

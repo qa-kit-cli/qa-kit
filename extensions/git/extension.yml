@@ -1,0 +1,10 @@
+id: git
+name: Git Workflow
+version: 0.1.0
+description: Feature branch creation and validation hooks.
+hooks:
+  - after_strategy
+  - after_testplan
+commands:
+  after_strategy: "git add .qakit/memory/qa-strategy.md 2>/dev/null; git diff --staged --quiet || git commit -m 'chore(qa): update qa strategy'"
+  after_testplan: "git add .qakit/memory/test-plan.md .qakit/memory/test-policy.md 2>/dev/null; git diff --staged --quiet || git commit -m 'chore(qa): update test plan'"

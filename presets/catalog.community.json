@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "selenium-java",
+      "name": "Selenium Java",
+      "version": "0.1.0",
+      "bundled": false
+    },
+    {
+      "id": "mobile-qa",
+      "name": "Mobile QA",
+      "version": "0.1.0",
+      "bundled": false
+    }
+  ]
+}

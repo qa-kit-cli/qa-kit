@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "integrations": [
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "tier": 1,
+      "format": "markdown",
+      "folder": ".claude/commands/"
+    },
+    {
+      "id": "copilot",
+      "name": "GitHub Copilot",
+      "tier": 1,
+      "format": "markdown",
+      "folder": ".github/copilot-instructions/"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini CLI",
+      "tier": 1,
+      "format": "toml",
+      "folder": ".gemini/commands/"
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "tier": 1,
+      "format": "markdown",
+      "folder": ".cursor/rules/"
+    },
+    {
+      "id": "cursor-agent",
+      "name": "Cursor Agent (alias)",
+      "tier": 1,
+      "format": "markdown",
+      "folder": ".cursor/rules/"
+    },
+    {
+      "id": "windsurf",
+      "name": "Windsurf",
+      "tier": 1,
+      "format": "markdown",
+      "folder": ".windsurf/rules/"
+    },
+    {
+      "id": "amp",
+      "name": "Amp",
+      "tier": 2,
+      "format": "markdown",
+      "folder": ".amp/commands/"
+    },
+    {
+      "id": "codex",
+      "name": "Codex",
+      "tier": 2,
+      "format": "markdown",
+      "folder": ".codex/commands/"
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode",
+      "tier": 2,
+      "format": "markdown",
+      "folder": ".opencode/commands/"
+    },
+    {
+      "id": "forge",
+      "name": "Forge",
+      "tier": 2,
+      "format": "markdown",
+      "folder": ".forge/commands/"
+    },
+    {
+      "id": "roo",
+      "name": "Roo",
+      "tier": 2,
+      "format": "markdown",
+      "folder": ".roo/commands/"
+    },
+    {
+      "id": "kiro",
+      "name": "Kiro CLI",
+      "tier": 3,
+      "format": "markdown",
+      "folder": ".kiro/commands/"
+    },
+    {
+      "id": "junie",
+      "name": "Junie",
+      "tier": 3,
+      "format": "markdown",
+      "folder": ".junie/commands/"
+    },
+    {
+      "id": "devin",
+      "name": "Devin",
+      "tier": 3,
+      "format": "markdown",
+      "folder": ".devin/commands/"
+    },
+    {
+      "id": "auggie",
+      "name": "Auggie",
+      "tier": 3,
+      "format": "markdown",
+      "folder": ".auggie/commands/"
+    },
+    {
+      "id": "tabnine",
+      "name": "Tabnine",
+      "tier": 3,
+      "format": "markdown",
+      "folder": ".tabnine/commands/"
+    },
+    {
+      "id": "shai",
+      "name": "Shai",
+      "tier": 3,
+      "format": "markdown",
+      "folder": ".shai/commands/"
+    },
+    {
+      "id": "kilocode",
+      "name": "KiloCode",
+      "tier": 3,
+      "format": "markdown",
+      "folder": ".kilocode/commands/"
+    },
+    {
+      "id": "qwen",
+      "name": "Qwen",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".qwen/commands/"
+    },
+    {
+      "id": "goose",
+      "name": "Goose",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".goose/commands/"
+    },
+    {
+      "id": "trae",
+      "name": "Trae",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".trae/commands/"
+    },
+    {
+      "id": "codebuddy",
+      "name": "CodeBuddy",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".codebuddy/commands/"
+    },
+    {
+      "id": "bob",
+      "name": "Bob",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".bob/commands/"
+    },
+    {
+      "id": "kimi",
+      "name": "Kimi",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".kimi/commands/"
+    },
+    {
+      "id": "lingma",
+      "name": "Lingma",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".lingma/commands/"
+    },
+    {
+      "id": "qodercli",
+      "name": "Qoder CLI",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".qoder/commands/"
+    },
+    {
+      "id": "pi",
+      "name": "Pi",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".pi/commands/"
+    },
+    {
+      "id": "iflow",
+      "name": "iFlow",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".iflow/commands/"
+    },
+    {
+      "id": "vibe",
+      "name": "Vibe",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".vibe/commands/"
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".hermes/commands/"
+    },
+    {
+      "id": "generic",
+      "name": "Generic",
+      "tier": 4,
+      "format": "markdown",
+      "folder": ".ai/commands/"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+id: testrail
+name: TestRail Sync
+version: 0.2.0
+description: Sync plans and results with TestRail.
+hooks:
+  - after_testplan
+  - after_ci_github_actions
+commands:
+  after_testplan: "[ -z \"$TESTRAIL_URL\" ] && echo '[testrail] TESTRAIL_URL not set — skipping sync. Set TESTRAIL_URL and TESTRAIL_API_KEY to enable.' || echo '[testrail] TestRail detected — sync the test plan at: '$TESTRAIL_URL'"
+  after_ci_github_actions: "[ -z \"$TESTRAIL_URL\" ] && echo '[testrail] TESTRAIL_URL not set — skipping result sync.' || echo '[testrail] Add trcli result upload step to your CI workflow to push JUnit XML results to TestRail'"

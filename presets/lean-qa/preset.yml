@@ -1,0 +1,11 @@
+id: lean-qa
+name: Lean QA
+version: 0.1.0
+description: Minimal ceremony preset for solo QA engineers — shorter strategy and test plan docs.
+compositions:
+  - command: qakit.strategy
+    mode: replace
+    template: strategy.md
+  - command: qakit.testplan
+    mode: replace
+    template: testplan.md
