@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os as _os
 import platform
 import shutil
 import subprocess
@@ -124,6 +125,14 @@ def init_command(
         "--branch-numbering",
         help="Branch numbering scheme: 'sequential' or 'timestamp'.",
     ),
+    suite: Optional[str] = typer.Option(
+        None,
+        "--suite",
+        help=(
+            "Create a named suite under .qakit/suites/ for per-feature QA artifacts. "
+            "Falls back to QAKIT_SUITE env var when not set."
+        ),
+    ),
 ) -> None:
     """Scaffold .qakit and install slash commands to the active integration."""
     # Validate branch_numbering
@@ -169,6 +178,15 @@ def init_command(
     # 4. Scaffold .qakit and copy bundled assets
     qakit_dir = refresh_shared_infra(project_root)
     ensure_memory_files(project_root)
+
+    # Resolve suite from CLI flag or QAKIT_SUITE env var
+    if suite is None:
+        _env_suite = _os.environ.get("QAKIT_SUITE", "").strip()
+        if _env_suite:
+            suite = _env_suite
+            print_info(
+                f"Active suite from [bold]QAKIT_SUITE[/bold] env var: {suite!r}"
+            )
 
     # 5. Install presets first so their overrides apply to command rendering
     if preset:
@@ -230,6 +248,18 @@ def init_command(
     cfg = ProjectConfig.load(qakit_dir)
     cfg.script = effective_script
     cfg.branch_numbering = branch_numbering
+    if suite:
+        from qa_kit_cli.suite_config import create_suite
+        suite_entry = create_suite(
+            qakit_dir=qakit_dir,
+            name=suite,
+            branch_numbering=branch_numbering,
+        )
+        cfg.active_suite = suite_entry.id
+        print_success(
+            f"Suite [bold]{suite_entry.id}[/bold] created at "
+            f"{(qakit_dir.parent / suite_entry.path).relative_to(Path.cwd())}"
+        )
     cfg.save(qakit_dir)
 
     # 12. Persist init options snapshot

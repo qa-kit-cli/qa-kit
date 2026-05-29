@@ -44,14 +44,16 @@ def _reregister_active(project_root: Path, qakit_dir: Path) -> None:
         CommandRegistrar().install_for_integration(project_root, qakit_dir, key)
 
 
-@app.command("add")
-def add(
+_preset_alias_shown: set[str] = set()
+
+
+def _do_add_preset(
     preset_ref: str,
-    priority: int = typer.Option(10, "--priority", help="Preset priority (lower = higher priority). Default: 10."),
-    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
-    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+    priority: int,
+    dev: Optional[str],
+    from_url: Optional[str],
 ) -> None:
-    """Add a preset (bundled ID, local --dev path, or --from URL)."""
+    """Shared implementation for install and add preset commands."""
     project_root = Path.cwd()
     qakit_dir = ensure_project_layout(project_root)
     source = from_url or dev or preset_ref
@@ -61,9 +63,8 @@ def add(
     print_success(f"Added preset '{entry['id']}' (priority={priority}).")
 
 
-@app.command("remove")
-def remove(preset_id: str) -> None:
-    """Remove an installed preset."""
+def _do_remove_preset(preset_id: str) -> None:
+    """Shared implementation for uninstall and remove preset commands."""
     project_root = Path.cwd()
     qakit_dir = ensure_project_layout(project_root)
     if PresetManager(project_root).remove(preset_id):
@@ -71,6 +72,52 @@ def remove(preset_id: str) -> None:
         print_success(f"Removed preset '{preset_id}'.")
         return
     print_warning(f"Preset '{preset_id}' was not installed.")
+
+
+@app.command("install")
+def install_preset(
+    preset_ref: str,
+    priority: int = typer.Option(10, "--priority", help="Preset priority (lower = higher priority). Default: 10."),
+    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+) -> None:
+    """Install a preset (bundled ID, local --dev path, or --from URL)."""
+    _do_add_preset(preset_ref, priority, dev, from_url)
+
+
+@app.command("add")
+def add(
+    preset_ref: str,
+    priority: int = typer.Option(10, "--priority", help="Preset priority (lower = higher priority). Default: 10."),
+    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+) -> None:
+    """Alias for install."""
+    if "preset.add" not in _preset_alias_shown:
+        _preset_alias_shown.add("preset.add")
+        print_info(
+            "Tip: 'qakit preset add' is an alias for 'qakit preset install'.\n"
+            "     Both work identically — 'install' is the preferred name going forward."
+        )
+    _do_add_preset(preset_ref, priority, dev, from_url)
+
+
+@app.command("uninstall")
+def uninstall_preset(preset_id: str) -> None:
+    """Remove an installed preset."""
+    _do_remove_preset(preset_id)
+
+
+@app.command("remove")
+def remove(preset_id: str) -> None:
+    """Alias for uninstall."""
+    if "preset.remove" not in _preset_alias_shown:
+        _preset_alias_shown.add("preset.remove")
+        print_info(
+            "Tip: 'qakit preset remove' is an alias for 'qakit preset uninstall'.\n"
+            "     Both work identically — 'uninstall' is the preferred name going forward."
+        )
+    _do_remove_preset(preset_id)
 
 
 @app.command("list")
@@ -251,14 +298,48 @@ def info(preset_id: str) -> None:
 
 
 @app.command("resolve")
-def resolve(template_name: str) -> None:
+def resolve(
+    template_name: str,
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show all 4 layers, not just the winner."
+    ),
+) -> None:
     """Show the template resolution stack for a given template name.
 
     Example: qakit preset resolve write.playwright.md
     """
+    from rich import box
+    from rich.table import Table
+
     project_root = Path.cwd()
     qakit_dir = ensure_project_layout(project_root)
     resolver = TemplateResolver(qakit_dir)
+
+    if verbose:
+        results = resolver.resolve_with_trace(template_name)
+        table = Table(
+            title=f"Resolution stack: {template_name}",
+            show_header=True,
+            header_style="bold cyan",
+            box=box.SIMPLE,
+        )
+        table.add_column("Layer", justify="center")
+        table.add_column("Source")
+        table.add_column("Template path")
+        table.add_column("Status")
+
+        for r in results:
+            path_str = str(r.template_path) if r.template_path else "—"
+            if r.wins:
+                status = "WINS"
+            elif r.template_path is not None:
+                status = "skipped"
+            else:
+                status = "no file"
+            table.add_row(str(r.layer_number), r.layer_label, path_str, status)
+        console.print(table)
+        return
+
     stack = resolver.resolve_stack(template_name)
     if not stack:
         print_warning(f"Template '{template_name}' was not found in any layer.")

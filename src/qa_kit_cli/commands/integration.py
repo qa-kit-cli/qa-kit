@@ -18,6 +18,8 @@ from qa_kit_cli.shared_infra import ensure_project_layout
 
 app = typer.Typer(help="Manage AI agent integrations.")
 
+_alias_notice_shown: set[str] = set()
+
 
 def _ctx() -> tuple[Path, Path]:
     project_root = Path.cwd()
@@ -135,6 +137,12 @@ def add_alias(
     ),
 ) -> None:
     """Alias for install."""
+    if "integration.add" not in _alias_notice_shown:
+        _alias_notice_shown.add("integration.add")
+        print_info(
+            "Tip: 'qakit integration add' is an alias for 'qakit integration install'.\n"
+            "     Both work identically — 'install' is the preferred name going forward."
+        )
     _install_command(key, integration_options=integration_options, force=force)
 
 
@@ -188,6 +196,12 @@ def remove_alias(
     ),
 ) -> None:
     """Alias for uninstall."""
+    if "integration.remove" not in _alias_notice_shown:
+        _alias_notice_shown.add("integration.remove")
+        print_info(
+            "Tip: 'qakit integration remove' is an alias for 'qakit integration uninstall'.\n"
+            "     Both work identically — 'uninstall' is the preferred name going forward."
+        )
     _remove_command(key, force=force)
 
 

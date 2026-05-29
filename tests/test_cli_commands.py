@@ -201,3 +201,61 @@ class TestWorkflowCommands:
         ensure_project_layout(project_dir)
         result = runner.invoke(app, ["workflow", "run", "nonexistent-workflow"])
         assert result.exit_code != 0
+
+
+# ---------------------------------------------------------------------------
+# qakit suite *
+# ---------------------------------------------------------------------------
+
+
+class TestSuiteCommands:
+    def test_init_with_suite_flag_creates_suite_dir(self, project_dir: Path, runner: CliRunner) -> None:
+        """--suite flag creates a suite directory during init."""
+        result = runner.invoke(app, ["init", "--here", "--no-git", "--suite", "login-flow"])
+        assert result.exit_code == 0, result.output
+        suites_dir = project_dir / ".qakit" / "suites"
+        assert suites_dir.is_dir()
+        suite_dirs = [d for d in suites_dir.iterdir() if d.is_dir()]
+        assert len(suite_dirs) >= 1
+
+    def test_suite_create_command(self, project_dir: Path, runner: CliRunner) -> None:
+        """qakit suite create creates a suite directory."""
+        runner.invoke(app, ["init", "--here", "--no-git"])
+        result = runner.invoke(app, ["suite", "create", "checkout-flow"])
+        assert result.exit_code == 0, result.output
+        assert "checkout" in result.output.lower() or "001" in result.output
+
+    def test_suite_list_command(self, project_dir: Path, runner: CliRunner) -> None:
+        """qakit suite list shows created suites."""
+        runner.invoke(app, ["init", "--here", "--no-git"])
+        runner.invoke(app, ["suite", "create", "login"])
+        result = runner.invoke(app, ["suite", "list"])
+        assert result.exit_code == 0, result.output
+        assert "login" in result.output
+
+    def test_suite_switch_command(self, project_dir: Path, runner: CliRunner) -> None:
+        """qakit suite switch sets the active suite."""
+        runner.invoke(app, ["init", "--here", "--no-git"])
+        runner.invoke(app, ["suite", "create", "login"])
+        suites = [d for d in (project_dir / ".qakit" / "suites").iterdir() if d.is_dir()]
+        suite_id = suites[0].name
+        result = runner.invoke(app, ["suite", "switch", suite_id])
+        assert result.exit_code == 0, result.output
+        assert "Active suite" in result.output
+
+    def test_suite_switch_invalid_id_fails(self, project_dir: Path, runner: CliRunner) -> None:
+        """qakit suite switch fails gracefully for unknown suite IDs."""
+        runner.invoke(app, ["init", "--here", "--no-git"])
+        result = runner.invoke(app, ["suite", "switch", "nonexistent-suite"])
+        assert result.exit_code != 0
+
+    def test_suite_info_command(self, project_dir: Path, runner: CliRunner) -> None:
+        """qakit suite info shows suite details for the active suite."""
+        runner.invoke(app, ["init", "--here", "--no-git"])
+        runner.invoke(app, ["suite", "create", "login"])
+        suites = [d for d in (project_dir / ".qakit" / "suites").iterdir() if d.is_dir()]
+        suite_id = suites[0].name
+        runner.invoke(app, ["suite", "switch", suite_id])
+        result = runner.invoke(app, ["suite", "info"])
+        assert result.exit_code == 0, result.output
+        assert "login" in result.output.lower()
