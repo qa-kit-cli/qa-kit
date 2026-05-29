@@ -9,6 +9,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-05-29
+
+### Added
+
+#### Init UX
+- `qakit init --no-git` — skip git repository initialization
+- `qakit init --branch-numbering sequential|timestamp` — configure branch numbering scheme (default: `sequential`)
+- Platform-aware `--script` default: Windows → `ps`, Linux/macOS → `sh` (was always `ps`)
+- `.qakit/init-options.json` — snapshot of every init option written on each `qakit init` run
+
+#### Version command
+- `qakit version --features` — display all feature flags in a table
+- `qakit version --features --json` — machine-readable JSON output for CI and agents; includes `version`, `python`, `platform`, `features`
+- `qakit --version` / `qakit -V` — root-level aliases that print the bare version string and exit
+- 8 stable feature flags: `qa_lifecycle_commands`, `skills_mode`, `preset_resolution`, `extension_resolution`, `workflow_engine`, `catalog_stack`, `integration_multi_install_safety`, `machine_readable_version`
+
+#### 4-layer template resolution
+- `TemplateResolver` now implements a 4-layer stack (previously 3):
+  1. Project-local overrides (`.qakit/templates/overrides/`)
+  2. Installed enabled presets by priority (`.qakit/presets/<id>/templates/commands/`)
+  3. Installed enabled extensions by priority (`.qakit/extensions/<id>/templates/commands/`)
+  4. Core defaults (bundled `templates/commands/`)
+- `qakit extension resolve <template>` — show the full 4-layer resolution stack including extensions
+- Disabled presets and extensions are correctly excluded from resolution
+
+#### Preset CLI
+- `qakit preset add --priority <N>` — set priority at install time (default: `10`, previously insertion order)
+- `qakit preset list` — richer columns: ID, Name, Version, Priority, Status, Templates, Description
+- Re-registers active integration commands after every `preset add/remove/enable/disable/priority` change
+
+#### Extension CLI
+- `qakit extension add --priority <N>` — set priority at install time (default: `10`)
+- `qakit extension add --dev <path>` / `--from <url>` — install from local path or URL
+- `qakit extension remove --keep-config` — back up extension config files instead of deleting them
+- `qakit extension remove --force` — remove immediately without backup
+- `qakit extension list --available` — show catalog/bundled extensions not yet installed
+- `qakit extension list --all` — show installed and available extensions together
+- `qakit extension list` — richer columns: ID, Name, Version, Priority, Status, Commands, Hooks
+- Extension entries now store `name`, `version`, `priority`, `enabled`, `source`, `installed_at`
+- Re-registers active integration commands after every extension state change
+
+#### Integration state v2
+- `integration.json` schema upgraded to version 2: `active_integration`, `installed_integrations`, `integration_settings`, `qakit_version`
+- Automatic backward-compatible migration from v1 format on load
+- `multi_install_safe: bool` on `IntegrationBase` — `ClaudeIntegration` and `CodexIntegration` set to `True`
+- `qakit integration install` — refuses unsafe multi-install when another active integration exists; use `--force` to override
+- `qakit integration switch --force --script --integration-options`
+- `qakit integration use --force` — refresh managed shared templates while switching
+- `qakit integration upgrade --script --integration-options` — update script type and options without reinstalling
+- `qakit integration list` now shows a `Multi-safe` column
+
+#### Workflow engine
+- `StepResult` gains `paused: bool` — distinct signal for gate pauses vs failures
+- `GateStep` returns `paused=True` on rejection so the workflow enters `status="paused"` (not `"failed"`) and can be resumed
+- Unsupported-but-schema-recognised step types now return informative error messages instead of crashing: `prompt`, `switch`, `while`, `do-while`, `fan-out`, `fan-in`
+- New module `workflows/input_schema.py` — validates workflow `inputs:` declarations against type, required, default, and enum constraints
+- Workflow YAML can declare `inputs:` with `name`, `type` (`string`/`number`/`boolean`/`enum`), `required`, `default`, `values`
+- Engine calls `validate_and_apply()` before executing steps; missing required inputs fail fast with a clear error
+
+### Changed
+
+- `TemplateResolver` extension layer inserted between presets and core (no breaking change to override or preset behaviour)
+- `preset add` default priority changed from insertion-order integer to `10`
+- `extension add` default priority changed to `10` and entry now stores richer metadata
+- `integration.json` uses new field names (`active_integration` etc.); old names still accepted on read
+
+### Fixed
+
+- Gate step previously signalled a failed workflow when the user rejected; it now correctly pauses the run and allows `qakit workflow resume`
+
+---
+
 ## [0.2.0] — 2026-05-29
 
 ### Added
