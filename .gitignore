@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+dist/
+build/
+*.egg-info/
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# QA Kit generated files — created by qakit init, not source code
+.qakit/
+.claude/commands/
+.claude/CLAUDE.md
+
+# OS
+.DS_Store
+Thumbs.db

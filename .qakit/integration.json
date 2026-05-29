@@ -1,9 +1,0 @@
-{
-  "schema_version": 1,
-  "active_key": "claude",
-  "installed": {
-    "claude": {
-      "name": "Claude Code"
-    }
-  }
-}
