@@ -48,6 +48,7 @@ def ensure_project_layout(project_root: Path) -> Path:
     ensure_dir(qakit_dir / "extensions")
     ensure_dir(qakit_dir / "workflows")
     ensure_dir(qakit_dir / "workflows" / "runs")
+    ensure_dir(qakit_dir / "suites")
     ensure_dir(qakit_dir / "auth")
     return qakit_dir
 

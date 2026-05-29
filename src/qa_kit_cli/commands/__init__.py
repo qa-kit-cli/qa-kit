@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typer
 
-from qa_kit_cli.commands import extension, init, integration, preset, workflow
+from qa_kit_cli.commands import extension, init, integration, preset, suite, workflow
 
 
 def register_commands(app: typer.Typer) -> None:
@@ -14,4 +14,5 @@ def register_commands(app: typer.Typer) -> None:
     app.add_typer(extension.app, name="extension")
     app.add_typer(preset.app, name="preset")
     app.add_typer(workflow.app, name="workflow")
+    app.add_typer(suite.app, name="suite")
 
