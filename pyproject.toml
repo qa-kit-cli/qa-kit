@@ -87,12 +87,8 @@ packages = ["src/qa_kit_cli"]
 # Integration catalogs
 "integrations/catalog.json"                = "qa_kit_cli/core_pack/integrations/catalog.json"
 "integrations/catalog.community.json"      = "qa_kit_cli/core_pack/integrations/catalog.community.json"
-# Bundled workflows
+# Bundled workflows (parent entry covers all subdirectories recursively)
 "workflows/qakit"                          = "qa_kit_cli/core_pack/workflows/qakit"
-"workflows/qakit/full-qa-cycle"            = "qa_kit_cli/core_pack/workflows/qakit/full-qa-cycle"
-"workflows/qakit/playwright-e2e"           = "qa_kit_cli/core_pack/workflows/qakit/playwright-e2e"
-"workflows/qakit/release-gate"             = "qa_kit_cli/core_pack/workflows/qakit/release-gate"
-"workflows/qakit/regression-refresh"       = "qa_kit_cli/core_pack/workflows/qakit/regression-refresh"
 
 [project.optional-dependencies]
 test = [
