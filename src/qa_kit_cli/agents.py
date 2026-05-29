@@ -119,7 +119,7 @@ class CommandRegistrar:
 
         for spec in COMMAND_MANIFEST:
             rendered = self._render(integration_key, spec, active_presets)
-            filename = f"{spec.template_name.rsplit('.', 1)[0]}{ext}"
+            filename = f"{spec.command_id}{ext}"
             target = commands_dir / filename
             atomic_write(target, rendered)
             installed.append(target)

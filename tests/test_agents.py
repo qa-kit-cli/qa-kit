@@ -51,7 +51,7 @@ def test_command_registrar_uses_core_template_when_no_presets(project_dir) -> No
     registrar = CommandRegistrar()
     registrar.install_for_integration(project_dir, qakit_dir, "claude")
 
-    content = (project_dir / ".claude" / "commands" / "write.playwright.md").read_text()
+    content = (project_dir / ".claude" / "commands" / "qakit.write.playwright.md").read_text()
     assert "Playwright" in content
 
 
@@ -71,7 +71,7 @@ def test_command_registrar_installs_for_gemini_creates_toml_files(project_dir) -
 def test_command_registrar_toml_output_contains_commands_table(project_dir) -> None:
     qakit_dir = ensure_project_layout(project_dir)
     CommandRegistrar().install_for_integration(project_dir, qakit_dir, "gemini")
-    strategy_file = project_dir / ".gemini" / "commands" / "strategy.toml"
+    strategy_file = project_dir / ".gemini" / "commands" / "qakit.strategy.toml"
     assert strategy_file.exists()
     content = strategy_file.read_text(encoding="utf-8")
     assert "[[commands]]" in content
@@ -97,7 +97,7 @@ def test_preset_composition_replace_overrides_core_template(project_dir) -> None
     registrar = CommandRegistrar()
     registrar.install_for_integration(project_dir, qakit_dir, "claude")
 
-    content = (project_dir / ".claude" / "commands" / "write.playwright.md").read_text()
+    content = (project_dir / ".claude" / "commands" / "qakit.write.playwright.md").read_text()
     assert "playwright.config.ts alignment" in content
 
 
@@ -108,7 +108,7 @@ def test_preset_composition_append_adds_to_core_template(project_dir) -> None:
     registrar = CommandRegistrar()
     registrar.install_for_integration(project_dir, qakit_dir, "claude")
 
-    content = (project_dir / ".claude" / "commands" / "write.a11y.md").read_text()
+    content = (project_dir / ".claude" / "commands" / "qakit.write.a11y.md").read_text()
     assert "axe-core" in content
     assert "Playwright preset" in content
 
@@ -124,7 +124,7 @@ def test_higher_priority_preset_wins_replace(project_dir) -> None:
     registrar = CommandRegistrar()
     registrar.install_for_integration(project_dir, qakit_dir, "claude")
 
-    content = (project_dir / ".claude" / "commands" / "strategy.md").read_text()
+    content = (project_dir / ".claude" / "commands" / "qakit.strategy.md").read_text()
     assert "minimal" in content.lower() or "lean" in content.lower() or "concise" in content.lower()
 
 
