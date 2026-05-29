@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from packaging.version import InvalidVersion, Version
 
-from qa_kit_cli._console import print_error, print_info, print_success, print_table
+from qa_kit_cli._console import console, print_error, print_info, print_success, print_table, print_warning
+from qa_kit_cli._github_http import safe_fetch_json
 from qa_kit_cli._utils import run_command
 from qa_kit_cli._version import __version__
 from qa_kit_cli.commands import register_commands
@@ -129,6 +131,44 @@ def self_update() -> None:
     if pip_err.strip():
         print_info(pip_err.strip())
     raise typer.Exit(1)
+
+
+@self_app.command("check")
+def self_check() -> None:
+    """Show installed version, update status, runtime details, and feature flags."""
+    print_info(f"qa-kit-cli {__version__}")
+
+    latest_version: str | None = None
+    payload = safe_fetch_json("https://pypi.org/pypi/qa-kit-cli/json", None)
+    if isinstance(payload, dict):
+        info = payload.get("info", {})
+        if isinstance(info, dict):
+            latest_version = str(info.get("version", "")).strip() or None
+
+    if latest_version:
+        try:
+            current_v = Version(__version__)
+            latest_v = Version(latest_version)
+            if latest_v > current_v:
+                console.print(
+                    f"[yellow]⚠ Update available: {__version__} → {latest_version}. "
+                    "Run `qakit self update` to upgrade.[/yellow]"
+                )
+            else:
+                console.print(f"[green]✓ qa-kit-cli is up to date ({__version__})[/green]")
+        except InvalidVersion:
+            print_warning(f"Unable to compare versions (installed={__version__}, latest={latest_version}).")
+    else:
+        print_warning("Could not fetch latest version from PyPI.")
+
+    env_rows = [
+        ["python", sys.version.split()[0]],
+        ["platform", platform.platform()],
+    ]
+    print_table(["Key", "Value"], env_rows, title="Runtime")
+
+    feature_rows = [[k, "yes" if v else "no"] for k, v in _FEATURE_FLAGS.items()]
+    print_table(["Feature", "Enabled"], feature_rows, title="Feature Flags")
 
 
 def main() -> None:

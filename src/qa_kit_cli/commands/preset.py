@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from rich.panel import Panel
 
-from qa_kit_cli._console import print_info, print_success, print_table, print_warning
+from qa_kit_cli._console import console, print_info, print_success, print_table, print_warning
+from qa_kit_cli.catalogs import PresetCatalogStack
 from qa_kit_cli.presets import PresetManager
 from qa_kit_cli.shared_infra import ensure_project_layout
 from qa_kit_cli.template_resolver import TemplateResolver
@@ -152,14 +154,35 @@ def search(
 ) -> None:
     """Search available presets across active catalogs."""
     manager = _manager()
-    bundled = manager.registry.list_bundled()
+    stack = PresetCatalogStack(Path.cwd(), include_community=True)
+    entries = stack.search(query or "")
+    if stack.last_remote_failed:
+        console.print("[yellow]Using bundled catalog (remote fetch failed)[/yellow]")
+
+    installed_ids = {str(e.get("id", "")) for e in manager.list()}
     rows: list[list[str]] = []
-    for pid in bundled:
-        if query and query.lower() not in pid.lower():
+    for item in entries:
+        if tag:
+            tags = item.get("tags", [])
+            if isinstance(tags, list):
+                if tag not in [str(t) for t in tags]:
+                    continue
+            elif tag != str(tags):
+                continue
+        if author and str(item.get("author", "")).lower() != author.lower():
             continue
-        rows.append([pid, "bundled", ""])
+        pid = str(item.get("id", ""))
+        rows.append(
+            [
+                pid,
+                str(item.get("name", "")),
+                str(item.get("version", "")),
+                str(item.get("description", "")),
+                "Yes" if pid in installed_ids else "No",
+            ]
+        )
     if rows:
-        print_table(["Preset", "Source", "Tags"], rows, title="Preset Search Results")
+        print_table(["ID", "Name", "Version", "Description", "Installed"], rows, title="Preset Search Results")
     else:
         print_info("No presets found matching the query.")
 
@@ -170,22 +193,61 @@ def info(preset_id: str) -> None:
     import yaml
 
     manager = _manager()
-    try:
-        src = manager.registry.resolve(preset_id)
-    except FileNotFoundError:
+    stack = PresetCatalogStack(Path.cwd(), include_community=True)
+    catalog_entry = stack.get(preset_id)
+    installed_entry = next((e for e in manager.list() if str(e.get("id", "")) == preset_id), None)
+
+    data: dict = {}
+    source_label = "catalog"
+    source_ref = str(catalog_entry.get("_source_ref", "")) if catalog_entry else ""
+    manifest_path: Path | None = None
+
+    if installed_entry:
+        manifest_path = Path.cwd() / ".qakit" / "presets" / preset_id / "preset.yml"
+    else:
+        try:
+            src = manager.registry.resolve(preset_id)
+            manifest_path = src / "preset.yml"
+            if "presets" in str(src):
+                source_label = "bundled"
+                source_ref = "bundled"
+        except FileNotFoundError:
+            manifest_path = None
+
+    if manifest_path and manifest_path.exists():
+        data = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    elif catalog_entry:
+        data = dict(catalog_entry)
+    else:
         print_warning(f"Preset '{preset_id}' not found.")
         raise typer.Exit(1)
-    manifest_file = src / "preset.yml"
-    if not manifest_file.exists():
-        print_warning(f"No preset.yml found in '{src}'.")
-        raise typer.Exit(1)
-    data = yaml.safe_load(manifest_file.read_text(encoding="utf-8")) or {}
-    rows = [[k, str(v)] for k, v in data.items() if not isinstance(v, list)]
-    print_table(["Field", "Value"], rows, title=f"Preset: {preset_id}")
-    comps = data.get("compositions", [])
-    if comps:
-        comp_rows = [[c.get("command", ""), c.get("mode", "replace")] for c in comps]
-        print_table(["Command", "Mode"], comp_rows, title="Compositions")
+
+    compositions = data.get("compositions", [])
+    command_list = [str(c.get("command", "")) for c in compositions] if isinstance(compositions, list) else []
+    hooks = data.get("hooks", [])
+    if installed_entry:
+        source_label = "catalog"
+        source_ref = str(installed_entry.get("source", ""))
+
+    if source_ref.startswith("http://") or source_ref.startswith("https://"):
+        source_display = source_ref
+    elif source_ref:
+        source_display = "bundled"
+    else:
+        source_display = source_label
+
+    panel_text = (
+        f"Name:        {data.get('name', preset_id)}\n"
+        f"ID:          {data.get('id', preset_id)}\n"
+        f"Version:     {data.get('version', '')}\n"
+        f"Author:      {data.get('author', '')}\n"
+        f"Description: {data.get('description', '')}\n"
+        f"Hooks:       {', '.join(str(h) for h in hooks) if hooks else '-'}\n"
+        f"Commands:    {', '.join(command_list) if command_list else '-'}\n"
+        f"Installed:   {'Yes' if installed_entry else 'No'}\n"
+        f"Source:      {source_display}"
+    )
+    console.print(Panel(panel_text, title=f"Preset: {preset_id}", border_style="cyan"))
 
 
 @app.command("resolve")

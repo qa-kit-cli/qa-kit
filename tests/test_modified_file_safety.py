@@ -62,7 +62,7 @@ def test_uninstall_force_removes_modified(tmp_path) -> None:
 def test_integration_remove_via_cli_preserves_modified(project_dir) -> None:
     runner = CliRunner()
     # Install
-    runner.invoke(app, ["init", "--integration", "claude"])
+    runner.invoke(app, ["init", "--here", "--integration", "claude"])
 
     # Modify a managed file
     cmd_file = project_dir / ".claude" / "commands" / "qakit.strategy.md"
@@ -78,7 +78,7 @@ def test_integration_remove_via_cli_preserves_modified(project_dir) -> None:
 
 def test_integration_remove_force_removes_modified(project_dir) -> None:
     runner = CliRunner()
-    runner.invoke(app, ["init", "--integration", "claude"])
+    runner.invoke(app, ["init", "--here", "--integration", "claude"])
 
     cmd_file = project_dir / ".claude" / "commands" / "qakit.strategy.md"
     cmd_file.write_text("user customized content", encoding="utf-8")

@@ -30,6 +30,7 @@ COMMAND_MANIFEST: list[CommandSpec] = [
     CommandSpec("qakit.pyramid", "pyramid.md", "Evaluate test pyramid balance"),
     # QA lifecycle
     CommandSpec("qakit.tasks", "tasks.md", "Generate QA implementation task list"),
+    CommandSpec("qakit.tasks.to-issues", "tasks.to-issues.md", "Convert QA tasks into GitHub issue drafts"),
     CommandSpec("qakit.checklist", "checklist.md", "Generate QA readiness checklist"),
     CommandSpec("qakit.traceability", "traceability.md", "Map requirements to test cases and CI jobs"),
     CommandSpec("qakit.regression", "regression.md", "Build or update regression suite"),

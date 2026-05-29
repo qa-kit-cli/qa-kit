@@ -69,9 +69,7 @@ def _install_integration(
     return len(installed)
 
 
-@app.command("add")
-@app.command("install")
-def add(
+def _install_command(
     key: str,
     integration_options: Optional[str] = typer.Option(
         None, "--integration-options", help="Agent-specific options, e.g. '--skills'."
@@ -108,9 +106,39 @@ def add(
     print_success(f"Installed integration '{key}' ({count} files).")
 
 
-@app.command("remove")
-@app.command("uninstall")
-def remove(
+@app.command("install")
+def install(
+    key: str,
+    integration_options: Optional[str] = typer.Option(
+        None, "--integration-options", help="Agent-specific options, e.g. '--skills'."
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Allow installation even when another active integration exists and multi-install is unsafe.",
+    ),
+) -> None:
+    """Install an AI agent integration."""
+    _install_command(key, integration_options=integration_options, force=force)
+
+
+@app.command("add")
+def add_alias(
+    key: str,
+    integration_options: Optional[str] = typer.Option(
+        None, "--integration-options", help="Agent-specific options, e.g. '--skills'."
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Allow installation even when another active integration exists and multi-install is unsafe.",
+    ),
+) -> None:
+    """Alias for install."""
+    _install_command(key, integration_options=integration_options, force=force)
+
+
+def _remove_command(
     key: str,
     force: bool = typer.Option(
         False, "--force", help="Remove even files that have been locally modified."
@@ -139,6 +167,28 @@ def remove(
         state.active_key = next(iter(state.installed.keys()), "")
     state.save(qakit_dir)
     print_success(f"Removed integration '{key}' ({len(removed)} files removed).")
+
+
+@app.command("uninstall")
+def uninstall(
+    key: str,
+    force: bool = typer.Option(
+        False, "--force", help="Remove even files that have been locally modified."
+    ),
+) -> None:
+    """Uninstall an AI agent integration."""
+    _remove_command(key, force=force)
+
+
+@app.command("remove")
+def remove_alias(
+    key: str,
+    force: bool = typer.Option(
+        False, "--force", help="Remove even files that have been locally modified."
+    ),
+) -> None:
+    """Alias for uninstall."""
+    _remove_command(key, force=force)
 
 
 @app.command("switch")
@@ -203,20 +253,57 @@ def use(
 
 
 @app.command("list")
-def list_cmd() -> None:
+def list_cmd(
+    catalog: bool = typer.Option(
+        False, "--catalog", help="Show all catalog integrations (not just installed)."
+    ),
+) -> None:
     """List installed and available integrations."""
     _, qakit_dir = _ctx()
     state = IntegrationState.load(qakit_dir)
     available = {i.key: i for i in list_integrations()}
     rows: list[list[str]] = []
-    for key, intg in sorted(available.items()):
-        status = "installed" if state.is_installed(key) else "available"
-        active = "active" if state.active_key == key else ""
-        meta = state.installed.get(key, {})
-        mode = str(meta.get("mode", ""))
-        safe = "yes" if intg.multi_install_safe else "no"
-        rows.append([key, intg.config.get("name", key), status, mode, active, safe])
-    print_table(["Key", "Name", "Status", "Mode", "Active", "Multi-safe"], rows, title="Integrations")
+    if catalog:
+        for key, intg in sorted(available.items()):
+            integration_type = "skills+commands" if intg.supports_skills else "commands"
+            installed = "yes" if state.is_installed(key) else "no"
+            safe = "yes" if intg.multi_install_safe else "no"
+            cli_required = "yes" if bool(intg.config.get("requires_cli")) else "no"
+            rows.append([
+                key,
+                str(intg.config.get("name", key)),
+                integration_type,
+                installed,
+                safe,
+                cli_required,
+            ])
+        print_table(
+            ["Key", "Name", "Type", "Installed", "Multi-safe", "CLI Required"],
+            rows,
+            title="Integration Catalog",
+        )
+        return
+
+    for key, meta in sorted(state.installed.items()):
+        intg = available.get(key)
+        if intg is None:
+            integration_type = str(meta.get("mode", "commands"))
+            safe = "no"
+            cli_required = "unknown"
+            name = str(meta.get("name", key))
+        else:
+            integration_type = "skills+commands" if intg.supports_skills else "commands"
+            safe = "yes" if intg.multi_install_safe else "no"
+            cli_required = "yes" if bool(intg.config.get("requires_cli")) else "no"
+            name = str(intg.config.get("name", key))
+        active = "yes" if state.active_key == key else "no"
+        rows.append([key, name, integration_type, active, safe, cli_required])
+
+    print_table(
+        ["Key", "Name", "Type", "Active", "Multi-safe", "CLI Required"],
+        rows,
+        title="Installed Integrations",
+    )
 
 
 @app.command("upgrade")

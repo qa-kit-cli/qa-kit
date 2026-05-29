@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from rich.panel import Panel
 
-from qa_kit_cli._console import print_info, print_success, print_table, print_warning
+from qa_kit_cli._console import console, print_info, print_success, print_table, print_warning
+from qa_kit_cli.catalogs import ExtensionCatalogStack
 from qa_kit_cli.extensions import ExtensionManager
 from qa_kit_cli.shared_infra import ensure_project_layout
 from qa_kit_cli.template_resolver import TemplateResolver
@@ -84,23 +86,28 @@ def remove(
 
 @app.command("update")
 def update(
-    extension_id: Optional[str] = typer.Argument(None, help="Extension to update (default: all)."),
+    extension_id: str = typer.Argument(..., help="Extension to update."),
+    force: bool = typer.Option(False, "--force", help="Overwrite locally modified templates."),
 ) -> None:
-    """Re-install an extension to pick up the latest bundled version."""
-    manager = _manager()
-    entries = manager.list()
-    targets = [e for e in entries if extension_id is None or e.get("id") == extension_id]
-    if not targets:
-        print_warning(f"Extension '{extension_id}' is not installed." if extension_id else "No extensions installed.")
+    """Update an installed extension to the latest available version."""
+    project_root = Path.cwd()
+    qakit_dir = ensure_project_layout(project_root)
+    manager = ExtensionManager(project_root)
+    try:
+        result = manager.update(extension_id, force=force)
+    except FileNotFoundError:
+        print_warning(f"Extension '{extension_id}' is not installed.")
+        raise typer.Exit(1)
+
+    if result.get("already_latest"):
+        print_info("Already at latest version")
         return
-    for e in targets:
-        eid = str(e.get("id", ""))
-        try:
-            manager.add(eid)
-            print_info(f"Updated extension '{eid}'.")
-        except FileNotFoundError:
-            print_warning(f"Extension source for '{eid}' not found — skipping.")
-    print_success("Extension update complete.")
+
+    _reregister_active(project_root, qakit_dir)
+    print_success(
+        f"Updated {extension_id} from v{result['old_version']} \u2192 v{result['new_version']}: "
+        f"{result['updated_templates']} templates updated"
+    )
 
 
 @app.command("list")
@@ -199,14 +206,37 @@ def search(
 ) -> None:
     """Search available extensions across active catalogs."""
     manager = _manager()
-    bundled = manager.registry.list_bundled()
+    stack = ExtensionCatalogStack(Path.cwd(), include_community=True)
+    entries = stack.search(query or "")
+    if stack.last_remote_failed:
+        console.print("[yellow]Using bundled catalog (remote fetch failed)[/yellow]")
+
+    installed_ids = {str(e.get("id", "")) for e in manager.list()}
     rows: list[list[str]] = []
-    for eid in bundled:
-        if query and query.lower() not in eid.lower():
+    for item in entries:
+        if tag:
+            tags = item.get("tags", [])
+            if isinstance(tags, list):
+                if tag not in [str(t) for t in tags]:
+                    continue
+            elif tag != str(tags):
+                continue
+        if author and str(item.get("author", "")).lower() != author.lower():
             continue
-        rows.append([eid, "bundled", ""])
+        if verified and not bool(item.get("verified", False)):
+            continue
+        eid = str(item.get("id", ""))
+        rows.append(
+            [
+                eid,
+                str(item.get("name", "")),
+                str(item.get("version", "")),
+                str(item.get("description", "")),
+                "Yes" if eid in installed_ids else "No",
+            ]
+        )
     if rows:
-        print_table(["Extension", "Source", "Tags"], rows, title="Extension Search Results")
+        print_table(["ID", "Name", "Version", "Description", "Installed"], rows, title="Extension Search Results")
     else:
         print_info("No extensions found matching the query.")
 
@@ -217,21 +247,67 @@ def info(extension_id: str) -> None:
     import yaml
 
     manager = _manager()
-    try:
-        src = manager.registry.resolve(extension_id)
-    except FileNotFoundError:
+    stack = ExtensionCatalogStack(Path.cwd(), include_community=True)
+    catalog_entry = stack.get(extension_id)
+    installed_entry = next((e for e in manager.list() if str(e.get("id", "")) == extension_id), None)
+
+    data: dict = {}
+    source_label = "catalog"
+    source_ref = str(catalog_entry.get("_source_ref", "")) if catalog_entry else ""
+    manifest_path: Path | None = None
+
+    if installed_entry:
+        manifest_path = Path.cwd() / ".qakit" / "extensions" / extension_id / "extension.yml"
+    else:
+        try:
+            src = manager.registry.resolve(extension_id)
+            manifest_path = src / "extension.yml"
+            if "extensions" in str(src):
+                source_label = "bundled"
+                source_ref = "bundled"
+        except FileNotFoundError:
+            manifest_path = None
+
+    if manifest_path and manifest_path.exists():
+        data = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    elif catalog_entry:
+        data = dict(catalog_entry)
+    else:
         print_warning(f"Extension '{extension_id}' not found.")
         raise typer.Exit(1)
-    manifest_file = src / "extension.yml"
-    if not manifest_file.exists():
-        print_warning(f"No extension.yml found in '{src}'.")
-        raise typer.Exit(1)
-    data = yaml.safe_load(manifest_file.read_text(encoding="utf-8")) or {}
-    rows = [[k, str(v)] for k, v in data.items() if not isinstance(v, (list, dict))]
-    print_table(["Field", "Value"], rows, title=f"Extension: {extension_id}")
+
     hooks = data.get("hooks", [])
-    if hooks:
-        print_info(f"Hooks: {', '.join(hooks)}")
+    commands = data.get("commands", {})
+    if isinstance(commands, dict):
+        command_list = list(commands.keys())
+    elif isinstance(commands, list):
+        command_list = [str(c) for c in commands]
+    else:
+        command_list = []
+
+    if installed_entry:
+        source_label = "catalog"
+        source_ref = str(installed_entry.get("source", ""))
+
+    if source_ref.startswith("http://") or source_ref.startswith("https://"):
+        source_display = source_ref
+    elif source_ref:
+        source_display = "bundled"
+    else:
+        source_display = source_label
+
+    panel_text = (
+        f"Name:        {data.get('name', extension_id)}\n"
+        f"ID:          {data.get('id', extension_id)}\n"
+        f"Version:     {data.get('version', '')}\n"
+        f"Author:      {data.get('author', '')}\n"
+        f"Description: {data.get('description', '')}\n"
+        f"Hooks:       {', '.join(str(h) for h in hooks) if hooks else '-'}\n"
+        f"Commands:    {', '.join(command_list) if command_list else '-'}\n"
+        f"Installed:   {'Yes' if installed_entry else 'No'}\n"
+        f"Source:      {source_display}"
+    )
+    console.print(Panel(panel_text, title=f"Extension: {extension_id}", border_style="cyan"))
 
 
 @app.command("resolve")

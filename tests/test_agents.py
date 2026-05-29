@@ -14,7 +14,7 @@ from qa_kit_cli.shared_infra import ensure_project_layout
 
 
 def test_command_manifest_has_expected_count() -> None:
-    assert len(COMMAND_MANIFEST) == 36
+    assert len(COMMAND_MANIFEST) == 37
 
 
 def test_command_manifest_command_ids_are_unique() -> None:

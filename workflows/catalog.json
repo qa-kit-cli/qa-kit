@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "workflows": [
+    {
+      "id": "full-qa-cycle",
+      "name": "Full QA Cycle",
+      "version": "1.0.0",
+      "description": "policy -> strategy -> testplan -> tasks -> write.playwright -> ci.github-actions",
+      "tags": ["qa", "lifecycle"]
+    },
+    {
+      "id": "playwright-e2e",
+      "name": "Playwright E2E",
+      "version": "1.0.0",
+      "description": "strategy -> write.playwright -> write.pom -> ci.github-actions",
+      "tags": ["playwright", "e2e"]
+    },
+    {
+      "id": "release-gate",
+      "name": "Release Gate",
+      "version": "1.0.0",
+      "description": "coverage -> traceability -> regression -> defects -> release-gate",
+      "tags": ["release", "gate"]
+    },
+    {
+      "id": "regression-refresh",
+      "name": "Regression Refresh",
+      "version": "1.0.0",
+      "description": "regression -> maintain.flaky -> maintain.data -> ci.github-actions",
+      "tags": ["regression", "maintenance"]
+    }
+  ]
+}

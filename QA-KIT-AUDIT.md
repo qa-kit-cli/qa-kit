@@ -1,7 +1,7 @@
 # QA Kit — Implementation Audit
 **Last updated:** 2026-05-29  
 **Tests:** 84/84 pass (`pytest tests/ -v`)  
-**Spec:** `study-the-spec-kit-foamy-ritchie.md`
+**Spec:** `ARCHITECTURE.md`
 
 ---
 
@@ -24,7 +24,7 @@
 | `docs/` | ✅ | index, getting-started, docfx.json, all command pages |
 | `src/qa_kit_cli/` | ✅ | All modules present |
 | `templates/` | ✅ | 6 core templates fully populated with realistic placeholder content |
-| `templates/commands/` | ✅ | All 29 files — 3,110 lines, avg 107 lines/template |
+| `templates/commands/` | ✅ | All 30 files — 3,110+ lines, avg 100+ lines/template |
 | `presets/playwright/` | ✅ | `preset.yml` with 5 compositions; 5 override templates |
 | `presets/cypress/` | ✅ | `preset.yml` with 2 compositions; 2 override templates |
 | `presets/lean-qa/` | ✅ | `preset.yml` with 2 compositions; 2 override templates |
@@ -60,9 +60,9 @@
 
 ---
 
-## 3. Slash Command Templates (29 total)
+## 3. Slash Command Templates (30 total)
 
-All 29 templates fully expanded. 3,110 lines total, average 107 lines per template.
+All 30 templates fully expanded. 3,110+ lines total, average 100+ lines per template.
 
 | Category | Files | Status | Avg lines |
 |---|---|---|---|
@@ -92,7 +92,7 @@ Every template:
 | `_github_http.py` | ✅ | fetch_text, fetch_json, download_file, safe_fetch_json |
 | `_utils.py` | ✅ | run_command, is_git_repo, merge_json, atomic_write, sha256_file, load/save_json |
 | `_version.py` | ✅ | importlib.metadata with dev fallback |
-| `agents.py` | ✅ | COMMAND_MANIFEST (all 29), CommandRegistrar with preset composition, detect_active_integration |
+| `agents.py` | ✅ | COMMAND_MANIFEST (all 30), CommandRegistrar with preset composition, detect_active_integration |
 | `authentication/token_store.py` | ✅ | keyring → env var → file fallback |
 | `catalogs.py` | ✅ | CatalogStackBase, IntegrationCatalogStack, ExtensionCatalogStack, PresetCatalogStack |
 | `extensions.py` | ✅ | ExtensionManifest, ExtensionRegistry, HookExecutor, ExtensionManager |
@@ -210,7 +210,7 @@ No P1 or P2 gaps remain. The only untested item is `_github_http.py` (network I/
 - ✅ `test_catalogs.py`, `test_token_store.py`, `test_utils.py` — 35 new tests
 - ✅ `test_cli_commands.py` — 24 CliRunner tests for integration/extension/preset/workflow subcommands
 - ✅ `context_file` CLAUDE.md preamble written on `qakit init`
-- ✅ All 29 `docs/commands/` pages expanded from 2-line stubs to full documentation
+- ✅ All 30 `docs/commands/` pages expanded from 2-line stubs to full documentation
 
 ---
 
@@ -226,13 +226,13 @@ No P1 or P2 gaps remain. The only untested item is `_github_http.py` (network I/
 | Preset override templates (playwright ×5, cypress ×2, lean-qa ×2) | ✅ Complete |
 | Extension hook firing (before/after per command step) | ✅ Complete |
 | Extension YAML commands entries (all 6 extensions) | ✅ Complete |
-| Slash command templates (29 files, avg 107 lines) | ✅ Complete |
+| Slash command templates (30 files, avg 100+ lines) | ✅ Complete |
 | Asset bundling (pyproject.toml force-include) | ✅ Complete |
 | CI/GitHub Actions workflows | ✅ Complete |
 | Tests (24/24 pass) | ✅ Complete |
 | **StepTracker class / readchar arrow-key select** | ✅ Implemented |
 | **Core template content depth** | ✅ Realistic placeholder content |
 | **Test breadth** (catalogs, token_store, utils) | ✅ 60/60 pass |
-| **docs/commands/ page content** | ✅ All 29 pages with full documentation |
+| **docs/commands/ page content** | ✅ All 30 pages with full documentation |
 | **context_file CLAUDE.md preamble on init** | ✅ Implemented |
 | **CLI subcommand runner tests** | ✅ 24 CliRunner tests (84/84 pass) |

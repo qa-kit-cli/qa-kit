@@ -4,18 +4,15 @@ version: 1.0.0
 description: Update regression suite from coverage analysis and gap report.
 tags: [regression, maintenance]
 steps:
-  - id: coverage
-    type: command
-    command: qakit.coverage
-  - id: gaps
-    type: command
-    command: qakit.gaps
-  - id: traceability
-    type: command
-    command: qakit.traceability
   - id: regression
     type: command
     command: qakit.regression
-  - id: ci-matrix
+  - id: maintain-flaky
     type: command
-    command: qakit.ci.matrix
+    command: qakit.maintain.flaky
+  - id: maintain-data
+    type: command
+    command: qakit.maintain.data
+  - id: ci
+    type: command
+    command: qakit.ci.github-actions

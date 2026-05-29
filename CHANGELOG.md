@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-29
+
+### Added
+
+- New slash command template: `/qakit.tasks.to-issues` (`templates/commands/tasks.to-issues.md`) and manifest entry.
+- New catalog-aware commands:
+  - `qakit extension search [query]`
+  - `qakit extension info <id>`
+  - `qakit extension update <id> [--force]`
+  - `qakit preset search [query]`
+  - `qakit preset info <id>`
+- New integration: `agy` (Antigravity), registered as a skills-capable integration.
+- `qakit integration list --catalog` to display all available integrations with installability metadata.
+- `qakit self check` command for version/update/runtime/feature diagnostics.
+- Bundled workflow catalog metadata files (`workflows/catalog.json`, `workflows/catalog.community.json`).
+
+### Fixed
+
+- `qakit init --no-git` now skips git initialization/commit operations.
+- `qakit init` with no project name now prompts interactively and aborts safely by default in non-interactive sessions.
+- Catalog search now supports remote resolution fallback with a bundled-catalog warning when remote fetch fails.
+
+### Changed
+
+- Integration command semantics clarified: `install`/`uninstall` are primary; `add`/`remove` remain aliases.
+- Workflow definitions for bundled IDs were aligned to documented step sequences:
+  - `full-qa-cycle`
+  - `playwright-e2e`
+  - `release-gate`
+  - `regression-refresh`
+- Extension update flow now preserves extension-local config files and can preserve locally modified templates unless `--force` is used.
+- Version bumped to `0.3.0`; project classifier moved to `Development Status :: 4 - Beta`.
+
+### Removed
+
+- Deprecated architecture draft filename `study-the-spec-kit-foamy-ritchie.md` in favor of `ARCHITECTURE.md`.
+
 ## [0.2.1] — 2026-05-29
 
 ### Added

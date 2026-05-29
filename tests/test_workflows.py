@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 from qa_kit_cli.shared_infra import ensure_project_layout
 from qa_kit_cli.workflows.base import StepContext, StepResult
@@ -256,3 +257,46 @@ def test_parallel_step_runs_multiple_command_substeps(project_dir) -> None:
     assert result.success
     # Parallel command steps each return a "Dispatched …" output; all three must succeed
     assert result.output.count("Dispatched") == 3
+
+
+def test_bundled_workflows_present() -> None:
+    root = Path(__file__).resolve().parents[1]
+    bundled = root / "workflows" / "qakit"
+    expected = {"full-qa-cycle", "playwright-e2e", "release-gate", "regression-refresh"}
+    for workflow_id in expected:
+        assert (bundled / workflow_id / "workflow.yml").exists()
+
+
+def test_full_qa_cycle_schema_valid() -> None:
+    root = Path(__file__).resolve().parents[1]
+    wf_path = root / "workflows" / "qakit" / "full-qa-cycle" / "workflow.yml"
+    data = yaml.safe_load(wf_path.read_text(encoding="utf-8")) or {}
+    assert data.get("id") == "full-qa-cycle"
+    steps = data.get("steps")
+    assert isinstance(steps, list) and steps
+    commands = [s.get("command") for s in steps]
+    assert commands == [
+        "qakit.policy",
+        "qakit.strategy",
+        "qakit.testplan",
+        "qakit.tasks",
+        "qakit.write.playwright",
+        "qakit.ci.github-actions",
+    ]
+
+
+def test_release_gate_workflow_schema_valid() -> None:
+    root = Path(__file__).resolve().parents[1]
+    wf_path = root / "workflows" / "qakit" / "release-gate" / "workflow.yml"
+    data = yaml.safe_load(wf_path.read_text(encoding="utf-8")) or {}
+    assert data.get("id") == "release-gate"
+    steps = data.get("steps")
+    assert isinstance(steps, list) and steps
+    commands = [s.get("command") for s in steps]
+    assert commands == [
+        "qakit.coverage",
+        "qakit.traceability",
+        "qakit.regression",
+        "qakit.defects",
+        "qakit.release-gate",
+    ]

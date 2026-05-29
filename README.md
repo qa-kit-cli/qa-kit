@@ -6,6 +6,8 @@ QA Kit is a CLI toolkit purpose-built for QA automation engineers. It gives your
 
 Think of it as [Spec Kit](https://github.com/github/spec-kit) for QA: same architecture, same install method, but every command is tailored to testing workflows rather than feature specification.
 
+Architecture details: [ARCHITECTURE.md](ARCHITECTURE.md)
+
 ---
 
 ## Install
@@ -53,7 +55,7 @@ qakit init my-project --force --script ps
 
 ## Slash Commands
 
-QA Kit installs 36 slash commands into your AI agent's command directory.
+QA Kit installs 37 slash commands into your AI agent's command directory.
 
 ### QA Strategy & Planning
 
@@ -72,6 +74,7 @@ QA Kit installs 36 slash commands into your AI agent's command directory.
 | Command | Description |
 |---|---|
 | `/qakit.tasks` | Generate a prioritized QA implementation task list from strategy and test plan |
+| `/qakit.tasks.to-issues` | Convert QA implementation tasks into GitHub issue-ready drafts |
 | `/qakit.checklist` | Generate a QA readiness checklist for a feature or release |
 | `/qakit.traceability` | Map requirements → test cases → test files → CI jobs in a traceability matrix |
 | `/qakit.regression` | Build or update the regression suite with P0/P1/P2 tiers and quarantine tracking |
@@ -150,31 +153,76 @@ qakit extension add browserstack  # Cross-browser cloud testing
 
 ## Supported AI Agents
 
-QA Kit works with 31 AI coding agents including:
+QA Kit works with 32 AI coding agents including:
 
 Claude Code · GitHub Copilot · Gemini CLI · Cursor · Windsurf · Amp · OpenCode · Forge · Roo · Kiro CLI · Junie · Devin · Tabnine · and more.
+
+---
+
+## Bundled Workflows
+
+| Workflow ID | Steps |
+|---|---|
+| `full-qa-cycle` | `policy` → `strategy` → `testplan` → `tasks` → `write.playwright` → `ci.github-actions` |
+| `playwright-e2e` | `strategy` → `write.playwright` → `write.pom` → `ci.github-actions` |
+| `release-gate` | `coverage` → `traceability` → `regression` → `defects` → `release-gate` |
+| `regression-refresh` | `regression` → `maintain.flaky` → `maintain.data` → `ci.github-actions` |
 
 ---
 
 ## CLI Reference
 
 ```
-qakit init                          Scaffold .qakit/ and install commands
-qakit check                         Verify prerequisites (node, playwright, jest)
-qakit version                       Show version info
+qakit init [PROJECT_NAME]
+  --here                              Initialize in current directory
+  --force                             Skip confirmation in non-empty directories
+  --integration, -i TEXT              AI agent to configure
+  --integration-options TEXT          Pass-through options (e.g. "--skills")
+  --ignore-agent-tools                Skip CLI tool version checks
+  --script [sh|ps]                    Script type (default: platform-aware)
+  --no-git                            Skip git initialization
+  --branch-numbering [sequential|timestamp]
+  --preset TEXT                       Install preset at init (repeatable)
 
-qakit integration add <agent>       Install an AI agent integration
-qakit integration switch <agent>    Change the active agent
-qakit integration list              List installed integrations
+qakit integration install|add <key>       Install an AI agent integration
+qakit integration uninstall|remove <key>  Uninstall an AI agent integration
+qakit integration switch <key>            Switch to a different integration
+qakit integration use <key>               Set active integration without reinstalling
+qakit integration upgrade [key]           Reinstall with updated templates
+qakit integration list [--catalog]        List integrations
 
-qakit preset add <id>               Install a preset
-qakit preset list                   List installed presets
-qakit preset priority <id> <n>      Set preset priority
+qakit extension install|add <id>          Install an extension
+  --priority N                            Set priority (default: 10)
+  --dev <path>                            Install from local path
+  --from <url>                            Install from URL
+qakit extension uninstall|remove <id>
+  --keep-config                           Back up config files instead of deleting
+  --force                                 Remove immediately
+qakit extension update <id>               Update to latest version
+qakit extension list [--available] [--all]
+qakit extension search [query]            Search catalog
+qakit extension info <id>                 Show extension details
+qakit extension enable/disable <id>
+qakit extension resolve <template>        Show 4-layer resolution stack
 
-qakit extension add <id>            Install an extension
-qakit extension list                List installed extensions
+qakit preset add <id> [--priority N]
+qakit preset remove <id>
+qakit preset list
+qakit preset search [query]
+qakit preset info <id>
+qakit preset priority <id> <n>
+qakit preset enable/disable <id>
+qakit preset resolve <template>
 
-qakit workflow run <id>             Run a named QA workflow
+qakit workflow run <id> [-i key=value]
+qakit workflow list
+qakit workflow resume
+qakit workflow status
+
+qakit version [--features] [--json]
+qakit check
+qakit self update
+qakit self check
 ```
 
 ---

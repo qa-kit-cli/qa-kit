@@ -6,6 +6,7 @@ from pathlib import Path
 
 from qa_kit_cli.integrations import get_integration, list_integrations, register_integration
 from qa_kit_cli.integrations.base import IntegrationBase, MarkdownIntegration, TomlIntegration
+from qa_kit_cli.integrations.agy import AgyIntegration
 from qa_kit_cli.integrations.claude import ClaudeIntegration
 from qa_kit_cli.integrations.copilot import CopilotIntegration
 from qa_kit_cli.integrations.gemini import GeminiIntegration
@@ -131,3 +132,12 @@ def test_context_file_paths_are_set() -> None:
     assert ClaudeIntegration.context_file == ".claude/CLAUDE.md"
     assert CopilotIntegration.context_file == ".github/copilot-instructions.md"
     assert GeminiIntegration.context_file == ".gemini/GEMINI.md"
+
+
+def test_agy_integration_registered() -> None:
+    assert get_integration("agy") is AgyIntegration
+
+
+def test_agy_is_skills_based() -> None:
+    assert AgyIntegration.supports_skills is True
+    assert AgyIntegration.get_skills_dir(Path.cwd()).as_posix().endswith("/.agy/skills")

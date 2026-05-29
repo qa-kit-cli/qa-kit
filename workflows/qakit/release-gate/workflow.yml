@@ -7,21 +7,15 @@ steps:
   - id: coverage
     type: command
     command: qakit.coverage
-  - id: gaps
-    type: command
-    command: qakit.gaps
   - id: traceability
     type: command
     command: qakit.traceability
+  - id: regression
+    type: command
+    command: qakit.regression
   - id: defects
     type: command
     command: qakit.defects
-  - id: checklist
-    type: command
-    command: qakit.checklist
   - id: release-gate
     type: command
     command: qakit.release-gate
-  - id: review
-    type: command
-    command: qakit.review.pr

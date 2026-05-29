@@ -157,7 +157,16 @@ class PresetManager:
 
         data = self._state()
         presets = [p for p in data["presets"] if p.get("id") != manifest.id]
-        presets.append({"id": manifest.id, "enabled": True, "priority": priority})
+        presets.append(
+            {
+                "id": manifest.id,
+                "name": manifest.name,
+                "version": manifest.version,
+                "source": str(src),
+                "enabled": True,
+                "priority": priority,
+            }
+        )
         data["presets"] = presets
         self._save(data)
         return presets[-1]

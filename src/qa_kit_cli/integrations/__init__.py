@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from qa_kit_cli.integrations.agy import AgyIntegration
 from qa_kit_cli.integrations.amp import AmpIntegration
 from qa_kit_cli.integrations.auggie import AuggieIntegration
 from qa_kit_cli.integrations.base import IntegrationBase
@@ -50,6 +51,7 @@ def _register_builtins() -> None:
         CursorIntegration,
         CursorAgentIntegration,
         WindsurfIntegration,
+        AgyIntegration,
         AmpIntegration,
         CodexIntegration,
         OpenCodeIntegration,

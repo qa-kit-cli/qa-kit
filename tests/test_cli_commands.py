@@ -33,7 +33,7 @@ class TestIntegrationCommands:
 
     def test_list_shows_available_integrations(self, project_dir: Path, runner: CliRunner) -> None:
         ensure_project_layout(project_dir)
-        result = runner.invoke(app, ["integration", "list"])
+        result = runner.invoke(app, ["integration", "list", "--catalog"])
         assert result.exit_code == 0, result.output
         assert "claude" in result.output
 

@@ -1,6 +1,6 @@
 [project]
 name = "qa-kit-cli"
-version = "0.2.1"
+version = "0.3.0"
 description = "QA Kit CLI — AI-assisted QA automation toolkit for Playwright, Cypress, Jest, and more."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -8,7 +8,7 @@ requires-python = ">=3.11"
 authors = [{ name = "QA Kit Contributors" }]
 keywords = ["qa", "testing", "playwright", "cypress", "automation", "ai", "claude"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -89,6 +89,8 @@ packages = ["src/qa_kit_cli"]
 "integrations/catalog.community.json"      = "qa_kit_cli/core_pack/integrations/catalog.community.json"
 # Bundled workflows (parent entry covers all subdirectories recursively)
 "workflows/qakit"                          = "qa_kit_cli/core_pack/workflows/qakit"
+"workflows/catalog.json"                   = "qa_kit_cli/core_pack/workflows/catalog.json"
+"workflows/catalog.community.json"         = "qa_kit_cli/core_pack/workflows/catalog.community.json"
 
 [project.optional-dependencies]
 test = [

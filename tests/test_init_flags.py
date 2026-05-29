@@ -25,7 +25,7 @@ def runner() -> CliRunner:
 
 def test_init_script_defaults_to_ps_on_windows(project_dir: Path, runner: CliRunner) -> None:
     with patch("qa_kit_cli.commands.init.platform.system", return_value="Windows"):
-        result = runner.invoke(app, ["init", "--ignore-agent-tools"])
+        result = runner.invoke(app, ["init", "--here", "--ignore-agent-tools"])
     assert result.exit_code == 0, result.output
     qakit_dir = project_dir / ".qakit"
     cfg_file = qakit_dir / "config.json"
@@ -36,7 +36,7 @@ def test_init_script_defaults_to_ps_on_windows(project_dir: Path, runner: CliRun
 
 def test_init_script_defaults_to_sh_on_linux(project_dir: Path, runner: CliRunner) -> None:
     with patch("qa_kit_cli.commands.init.platform.system", return_value="Linux"):
-        result = runner.invoke(app, ["init", "--ignore-agent-tools"])
+        result = runner.invoke(app, ["init", "--here", "--ignore-agent-tools"])
     assert result.exit_code == 0, result.output
     qakit_dir = project_dir / ".qakit"
     cfg = json.loads((qakit_dir / "config.json").read_text())
@@ -44,7 +44,7 @@ def test_init_script_defaults_to_sh_on_linux(project_dir: Path, runner: CliRunne
 
 
 def test_init_explicit_script_overrides_default(project_dir: Path, runner: CliRunner) -> None:
-    result = runner.invoke(app, ["init", "--script", "sh", "--ignore-agent-tools"])
+    result = runner.invoke(app, ["init", "--here", "--script", "sh", "--ignore-agent-tools"])
     assert result.exit_code == 0, result.output
     qakit_dir = project_dir / ".qakit"
     cfg = json.loads((qakit_dir / "config.json").read_text())
@@ -56,7 +56,7 @@ def test_init_explicit_script_overrides_default(project_dir: Path, runner: CliRu
 # ---------------------------------------------------------------------------
 
 def test_init_no_git_flag_accepted(project_dir: Path, runner: CliRunner) -> None:
-    result = runner.invoke(app, ["init", "--no-git", "--ignore-agent-tools"])
+    result = runner.invoke(app, ["init", "--here", "--no-git", "--ignore-agent-tools"])
     assert result.exit_code == 0, result.output
     # init-options.json should record no_git=True
     opts = json.loads((project_dir / ".qakit" / "init-options.json").read_text())
@@ -68,21 +68,21 @@ def test_init_no_git_flag_accepted(project_dir: Path, runner: CliRunner) -> None
 # ---------------------------------------------------------------------------
 
 def test_init_branch_numbering_sequential(project_dir: Path, runner: CliRunner) -> None:
-    result = runner.invoke(app, ["init", "--branch-numbering", "sequential", "--ignore-agent-tools"])
+    result = runner.invoke(app, ["init", "--here", "--branch-numbering", "sequential", "--ignore-agent-tools"])
     assert result.exit_code == 0, result.output
     cfg = json.loads((project_dir / ".qakit" / "config.json").read_text())
     assert cfg["branch_numbering"] == "sequential"
 
 
 def test_init_branch_numbering_timestamp(project_dir: Path, runner: CliRunner) -> None:
-    result = runner.invoke(app, ["init", "--branch-numbering", "timestamp", "--ignore-agent-tools"])
+    result = runner.invoke(app, ["init", "--here", "--branch-numbering", "timestamp", "--ignore-agent-tools"])
     assert result.exit_code == 0, result.output
     cfg = json.loads((project_dir / ".qakit" / "config.json").read_text())
     assert cfg["branch_numbering"] == "timestamp"
 
 
 def test_init_branch_numbering_invalid_rejected(project_dir: Path, runner: CliRunner) -> None:
-    result = runner.invoke(app, ["init", "--branch-numbering", "weekly", "--ignore-agent-tools"])
+    result = runner.invoke(app, ["init", "--here", "--branch-numbering", "weekly", "--ignore-agent-tools"])
     assert result.exit_code != 0
 
 
@@ -93,7 +93,7 @@ def test_init_branch_numbering_invalid_rejected(project_dir: Path, runner: CliRu
 def test_init_writes_init_options_json(project_dir: Path, runner: CliRunner) -> None:
     result = runner.invoke(
         app,
-        ["init", "--branch-numbering", "timestamp", "--no-git", "--ignore-agent-tools"],
+        ["init", "--here", "--branch-numbering", "timestamp", "--no-git", "--ignore-agent-tools"],
     )
     assert result.exit_code == 0, result.output
     opts_file = project_dir / ".qakit" / "init-options.json"
@@ -111,7 +111,7 @@ def test_init_writes_init_options_json(project_dir: Path, runner: CliRunner) -> 
 def test_init_repeatable_preset_flag(project_dir: Path, runner: CliRunner) -> None:
     result = runner.invoke(
         app,
-        ["init", "--preset", "playwright", "--preset", "cypress", "--ignore-agent-tools"],
+        ["init", "--here", "--preset", "playwright", "--preset", "cypress", "--ignore-agent-tools"],
     )
     assert result.exit_code == 0, result.output
     presets_dir = project_dir / ".qakit" / "presets"

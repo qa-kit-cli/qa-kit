@@ -1,7 +1,7 @@
 id: full-qa-cycle
 name: Full QA Cycle
 version: 1.0.0
-description: Complete QA lifecycle from policy through coverage and CI review.
+description: Complete QA lifecycle from policy through strategy, planning, test writing, and CI setup.
 tags: [lifecycle, full]
 steps:
   - id: policy
@@ -10,27 +10,15 @@ steps:
   - id: strategy
     type: command
     command: qakit.strategy
-  - id: clarify
-    type: command
-    command: qakit.clarify
   - id: testplan
     type: command
     command: qakit.testplan
   - id: tasks
     type: command
     command: qakit.tasks
-  - id: gaps
+  - id: write-playwright
     type: command
-    command: qakit.gaps
-  - id: write
-    type: gate
-    prompt: "Which test framework to use? (playwright/cypress/jest)"
-  - id: coverage
-    type: command
-    command: qakit.coverage
+    command: qakit.write.playwright
   - id: ci
     type: command
     command: qakit.ci.github-actions
-  - id: review
-    type: command
-    command: qakit.review.pr

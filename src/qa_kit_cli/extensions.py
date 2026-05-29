@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import filecmp
 import shutil
 import subprocess
 import tempfile
@@ -191,6 +192,109 @@ class ExtensionManager:
         data["extensions"] = extensions
         self._save(data)
         return extensions[-1]
+
+    def _find_entry(self, extension_id: str) -> dict[str, Any] | None:
+        for entry in self.list():
+            if str(entry.get("id", "")) == extension_id:
+                return entry
+        return None
+
+    def update(self, extension_id: str, force: bool = False) -> dict[str, Any]:
+        """Update an installed extension from its current registry source."""
+        entry = self._find_entry(extension_id)
+        if entry is None:
+            raise FileNotFoundError(f"Extension '{extension_id}' is not installed.")
+
+        src = self.registry.resolve(extension_id)
+        new_manifest = ExtensionManifest.load_from_dir(src)
+        dst = self.local_dir / extension_id
+        old_manifest = ExtensionManifest.load_from_dir(dst) if (dst / "extension.yml").exists() else new_manifest
+        old_source = Path(str(entry.get("source", ""))) if entry.get("source") else None
+
+        if new_manifest.version == old_manifest.version:
+            return {
+                "id": extension_id,
+                "old_version": old_manifest.version,
+                "new_version": new_manifest.version,
+                "updated_templates": 0,
+                "already_latest": True,
+            }
+
+        preserved_files: list[tuple[Path, bytes]] = []
+        preserved_templates: dict[Path, bytes] = {}
+        template_updates = 0
+
+        if dst.exists():
+            # Preserve non-template files (config, local metadata) always.
+            for path in dst.rglob("*"):
+                if not path.is_file():
+                    continue
+                rel = path.relative_to(dst)
+                if rel.parts[:2] == ("templates", "commands") or rel == Path("extension.yml"):
+                    continue
+                preserved_files.append((rel, path.read_bytes()))
+
+            current_templates_dir = dst / "templates" / "commands"
+            new_templates_dir = src / "templates" / "commands"
+            old_templates_dir = (old_source / "templates" / "commands") if old_source else None
+
+            if new_templates_dir.exists():
+                for new_tpl in new_templates_dir.rglob("*"):
+                    if not new_tpl.is_file():
+                        continue
+                    rel = new_tpl.relative_to(new_templates_dir)
+                    current_tpl = current_templates_dir / rel
+                    if not current_tpl.exists() or not filecmp.cmp(new_tpl, current_tpl, shallow=False):
+                        template_updates += 1
+
+                    if force:
+                        continue
+
+                    if not current_tpl.exists() or old_templates_dir is None:
+                        continue
+
+                    old_tpl = old_templates_dir / rel
+                    if old_tpl.exists() and not filecmp.cmp(current_tpl, old_tpl, shallow=False):
+                        preserved_templates[rel] = current_tpl.read_bytes()
+
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+
+        # Restore preserved template edits when not forcing.
+        if not force and preserved_templates:
+            for rel, content in preserved_templates.items():
+                target = dst / "templates" / "commands" / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(content)
+
+        # Restore preserved config files.
+        for rel, content in preserved_files:
+            target = dst / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(content)
+
+        data = self._state()
+        updated_entries: list[dict[str, Any]] = []
+        for existing in data.get("extensions", []):
+            if str(existing.get("id", "")) != extension_id:
+                updated_entries.append(existing)
+                continue
+            updated = dict(existing)
+            updated["name"] = new_manifest.name
+            updated["version"] = new_manifest.version
+            updated["source"] = str(src)
+            updated_entries.append(updated)
+        data["extensions"] = updated_entries
+        self._save(data)
+
+        return {
+            "id": extension_id,
+            "old_version": old_manifest.version,
+            "new_version": new_manifest.version,
+            "updated_templates": template_updates,
+            "already_latest": False,
+        }
 
     def remove(self, extension_id: str, keep_config: bool = False, force: bool = False) -> bool:
         """Remove an extension.

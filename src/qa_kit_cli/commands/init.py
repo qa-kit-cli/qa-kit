@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import platform
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -71,6 +73,21 @@ def _is_empty(path: Path) -> bool:
     return not any(path.iterdir())
 
 
+def _is_interactive_stdin() -> bool:
+    return sys.stdin.isatty()
+
+
+def _initialize_git(project_root: Path) -> None:
+    """Initialize git repository and create an initial commit if possible."""
+    subprocess.run(["git", "init"], cwd=project_root, check=False)
+    subprocess.run(["git", "add", "."], cwd=project_root, check=False)
+    subprocess.run(
+        ["git", "commit", "-m", "chore: initialize QA Kit project"],
+        cwd=project_root,
+        check=False,
+    )
+
+
 def init_command(
     project_name: Optional[str] = typer.Argument(
         None,
@@ -115,7 +132,21 @@ def init_command(
             f"--branch-numbering must be 'sequential' or 'timestamp', got '{branch_numbering}'."
         )
 
-    # 1. Resolve target directory
+    # 1. Resolve target directory and explicit current-dir semantics
+    no_project_arg = not project_name
+    if no_project_arg and not here and not force:
+        if not _is_interactive_stdin():
+            typer.echo(
+                "Error: specify a project name, pass `.`, or use `--here` to init in the current directory",
+                err=True,
+            )
+            raise typer.Exit(1)
+        if not typer.confirm(
+            "No project name given. Initialize QA Kit in the current directory?",
+            default=False,
+        ):
+            raise typer.Abort()
+
     if project_name and project_name != "." and not here:
         project_root = Path.cwd() / project_name
         if project_root.exists() and not project_root.is_dir():
@@ -217,6 +248,12 @@ def init_command(
             "ignore_agent_tools": ignore_agent_tools,
         },
     )
+
+    # 13. Git initialization (unless explicitly disabled)
+    if no_git:
+        print_info("Skipping git initialization (--no-git).")
+    else:
+        _initialize_git(project_root)
 
     print_success(f"Initialized QA Kit in {project_root}")
     print_info(f"Active integration: {selected} (mode: {mode_label})")
