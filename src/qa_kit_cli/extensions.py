@@ -48,6 +48,20 @@ HOOK_EVENTS: tuple[str, ...] = (
     "after_review_pr",
     "before_review_bugreport",
     "after_review_bugreport",
+    "before_tasks",
+    "after_tasks",
+    "before_checklist",
+    "after_checklist",
+    "before_traceability",
+    "after_traceability",
+    "before_regression",
+    "after_regression",
+    "before_defects",
+    "after_defects",
+    "before_release_gate",
+    "after_release_gate",
+    "before_env",
+    "after_env",
 )
 
 
@@ -82,6 +96,11 @@ class ExtensionRegistry:
         self.project_root = project_root
         self.bundled_dir = get_bundled_extensions_dir()
         self.local_dir = project_root / ".qakit" / "extensions"
+
+    def list_bundled(self) -> list[str]:
+        if not self.bundled_dir.exists():
+            return []
+        return sorted(p.name for p in self.bundled_dir.iterdir() if p.is_dir())
 
     def resolve(self, extension_ref: str) -> Path:
         if extension_ref.startswith("https://"):
@@ -179,6 +198,16 @@ class ExtensionManager:
         for extension in data["extensions"]:
             if extension.get("id") == extension_id:
                 extension["enabled"] = enabled
+                changed = True
+        self._save(data)
+        return changed
+
+    def set_priority(self, extension_id: str, priority: int) -> bool:
+        data = self._state()
+        changed = False
+        for extension in data["extensions"]:
+            if extension.get("id") == extension_id:
+                extension["priority"] = priority
                 changed = True
         self._save(data)
         return changed

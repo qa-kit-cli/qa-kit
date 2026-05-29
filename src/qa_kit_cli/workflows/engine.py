@@ -1,4 +1,4 @@
-"""Workflow execution engine."""
+"""Workflow execution engine with persistent run state."""
 
 from __future__ import annotations
 
@@ -12,16 +12,11 @@ from qa_kit_cli.extensions import ExtensionManager, HookExecutor
 from qa_kit_cli.workflows.base import StepContext, StepResult
 from qa_kit_cli.workflows.catalog import WorkflowCatalog
 from qa_kit_cli.workflows.expressions import resolve_expressions
-from qa_kit_cli.workflows.steps import CommandStep, GateStep, ParallelStep, ShellStep
+from qa_kit_cli.workflows.run_state import RunState, list_runs
+from qa_kit_cli.workflows.steps import CommandStep, GateStep, IfStep, ParallelStep, ShellStep
 
 
 def _command_to_hook_prefix(command_id: str) -> str | None:
-    """Map a qakit command ID to its lifecycle hook prefix.
-
-    "qakit.write.playwright"  → "write_playwright"
-    "qakit.ci.github-actions" → "ci_github_actions"
-    Returns None for unrecognised or non-qakit command strings.
-    """
     if not command_id.startswith("qakit."):
         return None
     suffix = command_id[len("qakit."):]
@@ -39,10 +34,12 @@ class WorkflowEngine:
             "shell": ShellStep(),
             "gate": GateStep(),
             "parallel": ParallelStep(),
+            "if": IfStep(),
         }
         ext_manager = ExtensionManager(project_root)
         self._active_manifests = ext_manager.active_manifests()
         self._hook_executor = HookExecutor(project_root)
+        self._runs_dir = qakit_dir / "workflows" / "runs"
 
     def _load_workflow(self, workflow_id: str) -> dict[str, Any]:
         path = self.catalog.get_path(workflow_id)
@@ -70,17 +67,63 @@ class WorkflowEngine:
 
         return result
 
-    def run(self, workflow_id: str, inputs: dict[str, Any] | None = None) -> StepResult:
+    def run(
+        self,
+        workflow_id: str,
+        inputs: dict[str, Any] | None = None,
+        run_state: RunState | None = None,
+    ) -> tuple[StepResult, RunState]:
         workflow = self._load_workflow(workflow_id)
-        self.context.inputs = inputs or {}
+        effective_inputs = inputs or {}
+        self.context.inputs = effective_inputs
+
+        state = run_state or RunState.new(workflow_id, effective_inputs)
+        state.save(self._runs_dir)
+
         steps = workflow.get("steps", [])
         if not isinstance(steps, list):
-            return StepResult(False, "Workflow steps must be a list")
+            state.status = "failed"
+            state.save(self._runs_dir)
+            return StepResult(False, "Workflow steps must be a list"), state
 
-        for idx, step in enumerate(steps, start=1):
+        start_idx = state.current_step
+        for idx, step in enumerate(steps[start_idx:], start=start_idx + 1):
+            step_id = step.get("id", step.get("type", "step"))
+            print_info(f"Step {idx}/{len(steps)}: {step_id}")
             result = self._run_step(step)
-            print_info(f"Step {idx}/{len(steps)}: {step.get('id', step.get('type', 'step'))}")
-            if not result.success:
-                return result
-        return StepResult(True, "Workflow completed")
+            state.current_step = idx
+            state.append_log(self._runs_dir, {"step": step_id, "success": result.success, "output": result.output})
 
+            if not result.success:
+                state.status = "failed"
+                state.save(self._runs_dir)
+                return result, state
+
+            if isinstance(runner := self._dispatch.get(str(step.get("type", "command"))), GateStep):
+                # Gate step that paused
+                if not result.success:
+                    state.status = "paused"
+                    state.save(self._runs_dir)
+                    return result, state
+
+        state.status = "completed"
+        state.save(self._runs_dir)
+        return StepResult(True, "Workflow completed"), state
+
+    def resume(self, run_id: str) -> tuple[StepResult, RunState]:
+        run_dir = self._runs_dir / run_id
+        if not run_dir.exists():
+            raise FileNotFoundError(f"Run '{run_id}' not found.")
+        state = RunState.load(run_dir)
+        if state.status == "completed":
+            return StepResult(True, "Already completed"), state
+        return self.run(state.workflow_id, state.inputs, run_state=state)
+
+    def get_run(self, run_id: str) -> RunState | None:
+        run_dir = self._runs_dir / run_id
+        if not run_dir.exists():
+            return None
+        return RunState.load(run_dir)
+
+    def list_runs(self) -> list[RunState]:
+        return list_runs(self._runs_dir)

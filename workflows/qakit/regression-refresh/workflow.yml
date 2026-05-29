@@ -1,0 +1,21 @@
+id: regression-refresh
+name: Regression Refresh Workflow
+version: 1.0.0
+description: Update regression suite from coverage analysis and gap report.
+tags: [regression, maintenance]
+steps:
+  - id: coverage
+    type: command
+    command: qakit.coverage
+  - id: gaps
+    type: command
+    command: qakit.gaps
+  - id: traceability
+    type: command
+    command: qakit.traceability
+  - id: regression
+    type: command
+    command: qakit.regression
+  - id: ci-matrix
+    type: command
+    command: qakit.ci.matrix

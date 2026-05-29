@@ -1,6 +1,6 @@
 [project]
 name = "qa-kit-cli"
-version = "0.1.2"
+version = "0.2.0"
 description = "QA Kit CLI — AI-assisted QA automation toolkit for Playwright, Cypress, Jest, and more."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -52,13 +52,19 @@ packages = ["src/qa_kit_cli"]
 
 [tool.hatch.build.targets.wheel.force-include]
 # Core document templates
-"templates/qa-strategy-template.md"       = "qa_kit_cli/core_pack/templates/qa-strategy-template.md"
-"templates/test-plan-template.md"         = "qa_kit_cli/core_pack/templates/test-plan-template.md"
-"templates/test-tasks-template.md"        = "qa_kit_cli/core_pack/templates/test-tasks-template.md"
-"templates/bug-report-template.md"        = "qa_kit_cli/core_pack/templates/bug-report-template.md"
-"templates/test-policy-template.md"       = "qa_kit_cli/core_pack/templates/test-policy-template.md"
-"templates/coverage-report-template.md"   = "qa_kit_cli/core_pack/templates/coverage-report-template.md"
-# Slash command templates
+"templates/qa-strategy-template.md"         = "qa_kit_cli/core_pack/templates/qa-strategy-template.md"
+"templates/test-plan-template.md"           = "qa_kit_cli/core_pack/templates/test-plan-template.md"
+"templates/test-tasks-template.md"          = "qa_kit_cli/core_pack/templates/test-tasks-template.md"
+"templates/bug-report-template.md"          = "qa_kit_cli/core_pack/templates/bug-report-template.md"
+"templates/test-policy-template.md"         = "qa_kit_cli/core_pack/templates/test-policy-template.md"
+"templates/coverage-report-template.md"     = "qa_kit_cli/core_pack/templates/coverage-report-template.md"
+"templates/qa-checklist-template.md"        = "qa_kit_cli/core_pack/templates/qa-checklist-template.md"
+"templates/traceability-matrix-template.md" = "qa_kit_cli/core_pack/templates/traceability-matrix-template.md"
+"templates/regression-suite-template.md"    = "qa_kit_cli/core_pack/templates/regression-suite-template.md"
+"templates/defect-summary-template.md"      = "qa_kit_cli/core_pack/templates/defect-summary-template.md"
+"templates/release-gate-template.md"        = "qa_kit_cli/core_pack/templates/release-gate-template.md"
+"templates/test-environments-template.md"   = "qa_kit_cli/core_pack/templates/test-environments-template.md"
+# Slash command templates (all files in templates/commands/ are bundled)
 "templates/commands"                       = "qa_kit_cli/core_pack/commands"
 # Platform scripts
 "scripts/bash"                             = "qa_kit_cli/core_pack/scripts/bash"
@@ -81,8 +87,12 @@ packages = ["src/qa_kit_cli"]
 # Integration catalogs
 "integrations/catalog.json"                = "qa_kit_cli/core_pack/integrations/catalog.json"
 "integrations/catalog.community.json"      = "qa_kit_cli/core_pack/integrations/catalog.community.json"
-# Bundled workflow
+# Bundled workflows
 "workflows/qakit"                          = "qa_kit_cli/core_pack/workflows/qakit"
+"workflows/qakit/full-qa-cycle"            = "qa_kit_cli/core_pack/workflows/qakit/full-qa-cycle"
+"workflows/qakit/playwright-e2e"           = "qa_kit_cli/core_pack/workflows/qakit/playwright-e2e"
+"workflows/qakit/release-gate"             = "qa_kit_cli/core_pack/workflows/qakit/release-gate"
+"workflows/qakit/regression-refresh"       = "qa_kit_cli/core_pack/workflows/qakit/regression-refresh"
 
 [project.optional-dependencies]
 test = [

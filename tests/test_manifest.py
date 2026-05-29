@@ -44,8 +44,9 @@ def test_uninstall_files_removes_unchanged_file(tmp_path: Path) -> None:
     f.write_text("original content", encoding="utf-8")
 
     record_files(qakit_dir, "claude", [f])
-    removed = uninstall_files(qakit_dir, "claude")
+    removed, skipped = uninstall_files(qakit_dir, "claude")
     assert f in removed
+    assert not skipped
     assert not f.exists()
 
 
@@ -57,9 +58,24 @@ def test_uninstall_files_skips_modified_file(tmp_path: Path) -> None:
     record_files(qakit_dir, "claude", [f])
     f.write_text("user modified this file", encoding="utf-8")
 
-    removed = uninstall_files(qakit_dir, "claude")
+    removed, skipped = uninstall_files(qakit_dir, "claude")
     assert f not in removed
+    assert f in skipped
     assert f.exists()
+
+
+def test_uninstall_files_force_removes_modified_file(tmp_path: Path) -> None:
+    qakit_dir = _make_qakit(tmp_path)
+    f = tmp_path / "cmd.md"
+    f.write_text("original content", encoding="utf-8")
+
+    record_files(qakit_dir, "claude", [f])
+    f.write_text("user modified this file", encoding="utf-8")
+
+    removed, skipped = uninstall_files(qakit_dir, "claude", force=True)
+    assert f in removed
+    assert not skipped
+    assert not f.exists()
 
 
 def test_uninstall_files_deletes_manifest_file(tmp_path: Path) -> None:
@@ -89,7 +105,7 @@ def test_uninstall_files_does_not_raise_when_file_already_deleted(tmp_path: Path
     record_files(qakit_dir, "claude", [f])
     f.unlink()
 
-    removed = uninstall_files(qakit_dir, "claude")
+    removed, skipped = uninstall_files(qakit_dir, "claude")
     assert f not in removed
 
 

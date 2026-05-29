@@ -2,7 +2,7 @@
 
 **AI-assisted QA automation toolkit for Playwright, Cypress, Jest, Vitest, Selenium, GitHub Actions, and Jenkins.**
 
-QA Kit is a CLI toolkit purpose-built for QA automation engineers. It gives your AI coding assistant (Claude Code, GitHub Copilot, Gemini CLI, Cursor, Windsurf, and 25+ more) a complete set of slash commands for the full QA lifecycle — from strategy through CI/CD.
+QA Kit is a CLI toolkit purpose-built for QA automation engineers. It gives your AI coding assistant (Claude Code, GitHub Copilot, Gemini CLI, Cursor, Windsurf, and 25+ more) a complete set of slash commands for the full QA lifecycle — from strategy through release gate decisions.
 
 Think of it as [Spec Kit](https://github.com/github/spec-kit) for QA: same architecture, same install method, but every command is tailored to testing workflows rather than feature specification.
 
@@ -31,22 +31,29 @@ pip install qa-kit-cli
 ## Quick Start
 
 ```bash
-# Initialize QA Kit in your project (picks up your AI agent automatically)
+# Initialize QA Kit in your project (auto-detects your AI agent)
 qakit init
 
-# In your AI agent, run the first command
+# Or initialize with specific options
+qakit init --integration codex --integration-options="--skills"
+qakit init --preset playwright --integration claude
+qakit init my-project --force --script ps
+
+# In your AI agent, run the QA lifecycle commands
 /qakit.policy
 /qakit.strategy
 /qakit.testplan
+/qakit.traceability
 /qakit.write.playwright
 /qakit.ci.github-actions
+/qakit.release-gate
 ```
 
 ---
 
 ## Slash Commands
 
-QA Kit installs 26 slash commands into your AI agent's command directory.
+QA Kit installs 36 slash commands into your AI agent's command directory.
 
 ### QA Strategy & Planning
 
@@ -59,6 +66,18 @@ QA Kit installs 26 slash commands into your AI agent's command directory.
 | `/qakit.gaps` | Cross-reference requirements with the test plan and flag untested scenarios |
 | `/qakit.clarify` | Resolve ambiguities in a QA strategy or test plan |
 | `/qakit.pyramid` | Analyze test pyramid balance and recommend adjustments |
+
+### QA Lifecycle
+
+| Command | Description |
+|---|---|
+| `/qakit.tasks` | Generate a prioritized QA implementation task list from strategy and test plan |
+| `/qakit.checklist` | Generate a QA readiness checklist for a feature or release |
+| `/qakit.traceability` | Map requirements → test cases → test files → CI jobs in a traceability matrix |
+| `/qakit.regression` | Build or update the regression suite with P0/P1/P2 tiers and quarantine tracking |
+| `/qakit.defects` | Summarize defects, escaped bugs, root causes, and risk trends |
+| `/qakit.release-gate` | Make a ship/no-ship decision from coverage, test results, and defects |
+| `/qakit.env` | Define test environments, browser/device matrix, data rules, and service virtualization |
 
 ### Test Writing
 

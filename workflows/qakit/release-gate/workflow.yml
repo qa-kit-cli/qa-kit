@@ -1,0 +1,27 @@
+id: release-gate
+name: Release Gate Workflow
+version: 1.0.0
+description: Evaluate release readiness from coverage, defects, and traceability.
+tags: [release, gate]
+steps:
+  - id: coverage
+    type: command
+    command: qakit.coverage
+  - id: gaps
+    type: command
+    command: qakit.gaps
+  - id: traceability
+    type: command
+    command: qakit.traceability
+  - id: defects
+    type: command
+    command: qakit.defects
+  - id: checklist
+    type: command
+    command: qakit.checklist
+  - id: release-gate
+    type: command
+    command: qakit.release-gate
+  - id: review
+    type: command
+    command: qakit.review.pr

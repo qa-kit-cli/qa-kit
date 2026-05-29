@@ -24,18 +24,36 @@ def get_recorded_files(qakit_dir: Path, integration_key: str) -> dict[str, str]:
     return load_json(_manifest_path(qakit_dir, integration_key))
 
 
-def uninstall_files(qakit_dir: Path, integration_key: str) -> list[Path]:
-    """
-    Remove files that were installed by this integration and whose content
-    hasn't changed since installation. Returns list of removed paths.
+def get_modified_files(qakit_dir: Path, integration_key: str) -> list[Path]:
+    """Return paths of installed files that have been locally modified."""
+    manifest = get_recorded_files(qakit_dir, integration_key)
+    return [
+        Path(path_str)
+        for path_str, recorded_hash in manifest.items()
+        if Path(path_str).exists() and sha256_file(Path(path_str)) != recorded_hash
+    ]
+
+
+def uninstall_files(
+    qakit_dir: Path,
+    integration_key: str,
+    force: bool = False,
+) -> tuple[list[Path], list[Path]]:
+    """Remove installed files, preserving locally-modified ones unless force=True.
+
+    Returns (removed, skipped).
     """
     manifest = get_recorded_files(qakit_dir, integration_key)
     removed: list[Path] = []
+    skipped: list[Path] = []
     for path_str, recorded_hash in manifest.items():
         p = Path(path_str)
-        if p.exists() and sha256_file(p) == recorded_hash:
+        if not p.exists():
+            continue
+        if sha256_file(p) == recorded_hash or force:
             p.unlink()
             removed.append(p)
-    manifest_file = _manifest_path(qakit_dir, integration_key)
-    manifest_file.unlink(missing_ok=True)
-    return removed
+        else:
+            skipped.append(p)
+    _manifest_path(qakit_dir, integration_key).unlink(missing_ok=True)
+    return removed, skipped

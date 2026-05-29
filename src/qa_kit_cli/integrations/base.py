@@ -15,6 +15,9 @@ class IntegrationBase(ABC):
     registrar_config: dict[str, Any] = {}
     context_file: str | None = None
 
+    supports_skills: bool = False
+    default_mode: str = "commands"  # "commands" | "skills"
+
     @classmethod
     def get_commands_dir(cls, project_root: Path) -> Path:
         folder = cls.config.get("folder", "")
@@ -27,9 +30,19 @@ class IntegrationBase(ABC):
         return None
 
     @classmethod
+    def get_skills_dir(cls, project_root: Path) -> Path:
+        skills_folder = cls.registrar_config.get("skills_dir", ".agents/skills")
+        return project_root / skills_folder
+
+    @classmethod
     @abstractmethod
     def render_command(cls, name: str, content: str, description: str = "") -> str:
         """Render a command template into the agent-specific format."""
+
+    @classmethod
+    def render_skill(cls, name: str, content: str, description: str = "") -> str:
+        """Render a skill file. Default: raw markdown content."""
+        return content
 
 
 class MarkdownIntegration(IntegrationBase):

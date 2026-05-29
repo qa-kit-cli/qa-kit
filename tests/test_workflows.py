@@ -119,8 +119,9 @@ def test_workflow_catalog_local_workflow_takes_precedence(project_dir) -> None:
 def test_workflow_engine_runs_bundled_workflow(project_dir) -> None:
     qakit_dir = ensure_project_layout(project_dir)
     engine = WorkflowEngine(project_dir, qakit_dir, non_interactive=True)
-    result = engine.run("qakit")
+    result, state = engine.run("qakit")
     assert result.success
+    assert state.status == "completed"
 
 
 def test_workflow_engine_fails_on_unknown_workflow(project_dir) -> None:
@@ -131,11 +132,22 @@ def test_workflow_engine_fails_on_unknown_workflow(project_dir) -> None:
         engine.run("not-a-real-workflow")
 
 
+def test_workflow_engine_persists_run_state(project_dir) -> None:
+    qakit_dir = ensure_project_layout(project_dir)
+    engine = WorkflowEngine(project_dir, qakit_dir, non_interactive=True)
+    result, state = engine.run("qakit")
+    assert state.run_id
+    run_dir = qakit_dir / "workflows" / "runs" / state.run_id
+    assert run_dir.exists()
+    assert (run_dir / "state.json").exists()
+
+
 def test_workflow_engine_logs_dispatched_commands(project_dir) -> None:
     qakit_dir = ensure_project_layout(project_dir)
     engine = WorkflowEngine(project_dir, qakit_dir, non_interactive=True)
     engine.run("qakit")
     log = qakit_dir / "workflow-runs" / "commands.log"
+    # commands.log is written by CommandStep, not the engine run-state
     assert log.exists()
     content = log.read_text(encoding="utf-8")
     assert "qakit.strategy" in content
@@ -156,7 +168,7 @@ def test_hooks_fire_for_command_step(project_dir) -> None:
     fake_manifest.hooks = ["before_strategy", "after_strategy"]
     engine._active_manifests = [fake_manifest]
 
-    result = engine.run("qakit")
+    result, state = engine.run("qakit")
     assert result.success
 
     calls = [call.args for call in mock_execute.call_args_list]
@@ -180,7 +192,7 @@ def test_hooks_do_not_fire_for_failed_step(project_dir) -> None:
     mock_execute = MagicMock(return_value=[])
     engine._hook_executor.execute = mock_execute  # type: ignore[method-assign]
 
-    result = engine.run("fail-test")
+    result, state = engine.run("fail-test")
     assert not result.success
     events = [call.args[1] for call in mock_execute.call_args_list]
     assert "before_strategy" not in events

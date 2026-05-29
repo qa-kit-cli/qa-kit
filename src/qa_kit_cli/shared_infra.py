@@ -8,6 +8,19 @@ from pathlib import Path
 from qa_kit_cli._assets import get_scripts_dir, get_templates_dir
 from qa_kit_cli._utils import ensure_dir
 
+_MEMORY_TEMPLATES: dict[str, str] = {
+    "test-policy-template.md": "test-policy.md",
+    "qa-strategy-template.md": "qa-strategy.md",
+    "test-plan-template.md": "test-plan.md",
+    "test-tasks-template.md": "test-tasks.md",
+    "qa-checklist-template.md": "qa-checklist.md",
+    "traceability-matrix-template.md": "traceability-matrix.md",
+    "regression-suite-template.md": "regression-suite.md",
+    "defect-summary-template.md": "defect-summary.md",
+    "release-gate-template.md": "release-gate.md",
+    "test-environments-template.md": "test-environments.md",
+}
+
 
 def _copy_tree(src: Path, dst: Path) -> None:
     if not src.exists():
@@ -29,10 +42,12 @@ def ensure_project_layout(project_root: Path) -> Path:
     ensure_dir(qakit_dir / "memory")
     ensure_dir(qakit_dir / "scripts")
     ensure_dir(qakit_dir / "templates")
+    ensure_dir(qakit_dir / "templates" / "overrides")
     ensure_dir(qakit_dir / "integrations")
     ensure_dir(qakit_dir / "presets")
     ensure_dir(qakit_dir / "extensions")
     ensure_dir(qakit_dir / "workflows")
+    ensure_dir(qakit_dir / "workflows" / "runs")
     ensure_dir(qakit_dir / "auth")
     return qakit_dir
 
@@ -53,15 +68,10 @@ def ensure_memory_files(project_root: Path) -> None:
     memory_dir = qakit_dir / "memory"
     template_dir = get_templates_dir()
 
-    mapping = {
-        "test-policy-template.md": memory_dir / "test-policy.md",
-        "qa-strategy-template.md": memory_dir / "qa-strategy.md",
-        "test-plan-template.md": memory_dir / "test-plan.md",
-    }
-    for template_name, target in mapping.items():
+    for template_name, target_name in _MEMORY_TEMPLATES.items():
+        target = memory_dir / target_name
         if target.exists():
             continue
         source = template_dir / template_name
         if source.exists():
             target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
-

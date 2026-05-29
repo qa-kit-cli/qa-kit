@@ -1,0 +1,27 @@
+id: playwright-e2e
+name: Playwright E2E Workflow
+version: 1.0.0
+description: End-to-end QA workflow optimized for Playwright TypeScript projects.
+tags: [playwright, e2e]
+steps:
+  - id: policy
+    type: command
+    command: qakit.policy
+  - id: testplan
+    type: command
+    command: qakit.testplan
+  - id: traceability
+    type: command
+    command: qakit.traceability
+  - id: write-playwright
+    type: command
+    command: qakit.write.playwright
+  - id: write-pom
+    type: command
+    command: qakit.write.pom
+  - id: coverage
+    type: command
+    command: qakit.coverage
+  - id: ci
+    type: command
+    command: qakit.ci.github-actions

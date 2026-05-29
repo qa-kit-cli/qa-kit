@@ -21,8 +21,8 @@ def _template_files() -> list[Path]:
 # ---------------------------------------------------------------------------
 
 
-def test_command_manifest_count_is_29() -> None:
-    assert len(COMMAND_MANIFEST) == 29
+def test_command_manifest_count_is_36() -> None:
+    assert len(COMMAND_MANIFEST) == 36
 
 
 def test_command_manifest_command_ids_are_unique() -> None:
