@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from qa_kit_cli.shared_infra import ensure_memory_files, ensure_project_layout, refresh_shared_infra
 
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import platform
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,7 +10,6 @@ import pytest
 from typer.testing import CliRunner
 
 from qa_kit_cli.__init__ import app
-from qa_kit_cli.shared_infra import ensure_project_layout
 
 
 @pytest.fixture
@@ -118,3 +116,41 @@ def test_init_repeatable_preset_flag(project_dir: Path, runner: CliRunner) -> No
     installed = [p.name for p in presets_dir.iterdir() if p.is_dir()]
     assert "playwright" in installed
     assert "cypress" in installed
+
+
+def test_init_ai_flag_is_alias_for_integration(project_dir: Path, runner: CliRunner) -> None:
+    """--ai should work as alias for --integration."""
+    result = runner.invoke(
+        app,
+        ["init", "--here", "--ai", "claude", "--ignore-agent-tools"],
+        catch_exceptions=False,
+    )
+    assert "No such option: --ai" not in (result.output or "")
+    assert result.exit_code in (0, 1)
+
+
+def test_init_generic_accepts_commands_dir(project_dir: Path, runner: CliRunner) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "init",
+            "--here",
+            "--integration",
+            "generic",
+            "--commands-dir",
+            ".myagent/cmds/",
+            "--ignore-agent-tools",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert (project_dir / ".myagent" / "cmds").exists()
+
+
+def test_init_generic_warns_without_commands_dir(project_dir: Path, runner: CliRunner) -> None:
+    result = runner.invoke(
+        app,
+        ["init", "--here", "--integration", "generic", "--ignore-agent-tools"],
+    )
+    assert result.exit_code == 0, result.output
+    assert "Using generic integration without --commands-dir." in result.output
+    assert (project_dir / ".generic" / "commands").exists()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 import typer
 from rich.panel import Panel
@@ -50,8 +50,8 @@ _ext_alias_shown: set[str] = set()
 def _do_add_extension(
     extension_ref: str,
     priority: int,
-    dev: Optional[str],
-    from_url: Optional[str],
+    dev: str | None,
+    from_url: str | None,
 ) -> None:
     """Shared implementation for install and add extension commands."""
     project_root = Path.cwd()
@@ -83,8 +83,8 @@ def _do_remove_extension(
 def install_ext(
     extension_ref: str,
     priority: int = typer.Option(10, "--priority", help="Extension priority (lower = higher priority). Default: 10."),
-    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
-    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+    dev: str | None = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: str | None = typer.Option(None, "--from", help="Install from a URL."),
 ) -> None:
     """Install an extension (bundled ID, local --dev path, or --from URL)."""
     _do_add_extension(extension_ref, priority, dev, from_url)
@@ -94,8 +94,8 @@ def install_ext(
 def add(
     extension_ref: str,
     priority: int = typer.Option(10, "--priority", help="Extension priority (lower = higher priority). Default: 10."),
-    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
-    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+    dev: str | None = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: str | None = typer.Option(None, "--from", help="Install from a URL."),
 ) -> None:
     """Alias for install."""
     if "extension.add" not in _ext_alias_shown:
@@ -152,9 +152,9 @@ def update(
     manager = ExtensionManager(project_root)
     try:
         result = manager.update(extension_id, force=force)
-    except FileNotFoundError:
+    except FileNotFoundError as exc:
         print_warning(f"Extension '{extension_id}' is not installed.")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from exc
 
     if result.get("already_latest"):
         print_info("Already at latest version")
@@ -256,9 +256,9 @@ def set_priority(extension_id: str, value: int) -> None:
 
 @app.command("search")
 def search(
-    query: Optional[str] = typer.Argument(None),
-    tag: Optional[str] = typer.Option(None, "--tag"),
-    author: Optional[str] = typer.Option(None, "--author"),
+    query: str | None = typer.Argument(None),
+    tag: str | None = typer.Option(None, "--tag"),
+    author: str | None = typer.Option(None, "--author"),
     verified: bool = typer.Option(False, "--verified"),
 ) -> None:
     """Search available extensions across active catalogs."""
@@ -308,7 +308,7 @@ def info(extension_id: str) -> None:
     catalog_entry = stack.get(extension_id)
     installed_entry = next((e for e in manager.list() if str(e.get("id", "")) == extension_id), None)
 
-    data: dict = {}
+    data: dict[str, Any] = {}
     source_label = "catalog"
     source_ref = str(catalog_entry.get("_source_ref", "")) if catalog_entry else ""
     manifest_path: Path | None = None
@@ -442,7 +442,7 @@ def catalog_list() -> None:
 @catalog_app.command("add")
 def catalog_add(
     url: str,
-    name: Optional[str] = typer.Option(None, "--name"),
+    name: str | None = typer.Option(None, "--name"),
     priority: int = typer.Option(50, "--priority"),
     install_allowed: bool = typer.Option(False, "--install-allowed"),
 ) -> None:
@@ -452,10 +452,10 @@ def catalog_add(
     project_root = Path.cwd()
     ensure_project_layout(project_root)
     catalog_file = project_root / ".qakit" / "extension-catalogs.yml"
-    data: dict = {}
+    data: dict[str, Any] = {}
     if catalog_file.exists():
         data = yaml.safe_load(catalog_file.read_text(encoding="utf-8")) or {}
-    catalogs: list = data.get("catalogs", [])
+    catalogs: list[dict[str, Any]] = data.get("catalogs", [])
     catalogs.append({"name": name or url, "url": url, "priority": priority, "install_allowed": install_allowed})
     data["catalogs"] = catalogs
     catalog_file.write_text(yaml.dump(data, default_flow_style=False), encoding="utf-8")

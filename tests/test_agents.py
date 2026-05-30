@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from qa_kit_cli._assets import get_commands_dir
 from qa_kit_cli.agents import COMMAND_MANIFEST, CommandRegistrar, detect_active_integration
 from qa_kit_cli.presets import PresetManager
 from qa_kit_cli.shared_infra import ensure_project_layout
-
 
 # ---------------------------------------------------------------------------
 # COMMAND_MANIFEST integrity

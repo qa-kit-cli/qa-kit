@@ -5,8 +5,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import pytest
-
 from qa_kit_cli._assets import get_commands_dir
 from qa_kit_cli.agents import COMMAND_MANIFEST
 

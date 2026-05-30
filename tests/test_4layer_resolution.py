@@ -4,11 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from qa_kit_cli.shared_infra import ensure_project_layout
 from qa_kit_cli.template_resolver import TemplateResolver
-
 
 TEMPLATE = "write.playwright.md"
 
@@ -142,7 +138,7 @@ def test_resolve_stack_first_entry_is_winner(qakit_dir: Path) -> None:
 
     resolver = TemplateResolver(qakit_dir)
     stack = resolver.resolve_stack(TEMPLATE)
-    winner_entries = [(l, p, w) for l, p, w in stack if w]
+    winner_entries = [(layer_name, path, wins) for layer_name, path, wins in stack if wins]
     assert len(winner_entries) == 1
     layer, _, _ = winner_entries[0]
     assert "extension:" in layer

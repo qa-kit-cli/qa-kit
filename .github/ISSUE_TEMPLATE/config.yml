@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Bug report template
+    url: https://github.com/qa-kit-cli/qa-kit/issues/new?template=bug_report.md
+    about: Use the bug report template for reproducible defects.
+  - name: Feature request template
+    url: https://github.com/qa-kit-cli/qa-kit/issues/new?template=feature_request.md
+    about: Use the feature request template for enhancement proposals.

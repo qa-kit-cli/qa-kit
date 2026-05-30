@@ -1,0 +1,56 @@
+"""Tests for IFlow integration."""
+from __future__ import annotations
+
+from pathlib import Path
+
+from qa_kit_cli.integrations import get_integration
+from qa_kit_cli.integrations.base import IntegrationBase, MarkdownIntegration
+from qa_kit_cli.integrations.iflow import IFlowIntegration
+
+
+def test_registration() -> None:
+    assert get_integration("iflow") is IFlowIntegration
+
+
+def test_key() -> None:
+    assert IFlowIntegration.key == "iflow"
+
+
+def test_config_has_folder() -> None:
+    assert "folder" in IFlowIntegration.config
+    assert IFlowIntegration.config["folder"]
+
+
+def test_registrar_config_has_dir() -> None:
+    assert "dir" in IFlowIntegration.registrar_config
+    assert IFlowIntegration.registrar_config["dir"]
+
+
+def test_registrar_config_has_extension() -> None:
+    assert "extension" in IFlowIntegration.registrar_config
+
+
+def test_is_integration_base_subclass() -> None:
+    assert issubclass(IFlowIntegration, IntegrationBase)
+
+
+def test_render_command_returns_string() -> None:
+    rendered = IFlowIntegration.render_command("iflow.test", "test content", "test description")
+    assert isinstance(rendered, str)
+    assert len(rendered) > 0
+
+
+def test_render_command_includes_content() -> None:
+    rendered = IFlowIntegration.render_command("iflow.test", "unique_content_xyz", "desc")
+    assert "unique_content_xyz" in rendered
+
+
+def test_get_commands_dir(tmp_path: Path) -> None:
+    d = IFlowIntegration.get_commands_dir(tmp_path)
+    assert isinstance(d, Path)
+    assert str(d).startswith(str(tmp_path))
+
+def test_is_markdown_integration() -> None:
+    assert issubclass(IFlowIntegration, MarkdownIntegration)
+
+

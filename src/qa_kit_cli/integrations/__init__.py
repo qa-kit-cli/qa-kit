@@ -7,7 +7,18 @@ from typing import TYPE_CHECKING
 from qa_kit_cli.integrations.agy import AgyIntegration
 from qa_kit_cli.integrations.amp import AmpIntegration
 from qa_kit_cli.integrations.auggie import AuggieIntegration
-from qa_kit_cli.integrations.base import IntegrationBase
+from qa_kit_cli.integrations.base import (
+    IntegrationBase,
+)
+from qa_kit_cli.integrations.base import (
+    MarkdownIntegration as MarkdownIntegration,
+)
+from qa_kit_cli.integrations.base import (
+    TomlIntegration as TomlIntegration,
+)
+from qa_kit_cli.integrations.base import (
+    YamlIntegration as YamlIntegration,
+)
 from qa_kit_cli.integrations.bob import BobIntegration
 from qa_kit_cli.integrations.claude import ClaudeIntegration
 from qa_kit_cli.integrations.codebuddy import CodeBuddyIntegration

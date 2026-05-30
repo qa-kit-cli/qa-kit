@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Sequence
 from types import TracebackType
-from typing import Sequence, Type
 
 from rich.console import Console
 from rich.panel import Panel
@@ -68,14 +68,14 @@ class StepTracker:
         self._current = 0
         self._title = title
 
-    def __enter__(self) -> "StepTracker":
+    def __enter__(self) -> StepTracker:
         if self._title:
             console.print(f"\n[bold]{self._title}[/]\n")
         return self
 
     def __exit__(
         self,
-        exc_type: Type[BaseException] | None,
+        exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:

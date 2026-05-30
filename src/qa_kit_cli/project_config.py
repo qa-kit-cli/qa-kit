@@ -24,7 +24,7 @@ class ProjectConfig:
     extra: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, qakit_dir: Path) -> "ProjectConfig":
+    def load(cls, qakit_dir: Path) -> ProjectConfig:
         """Load configuration from .qakit/config.json, returning defaults if absent."""
         data = load_json(qakit_dir / _FILENAME)
         known = {"schema_version", "script", "branch_numbering", "created_by", "active_suite"}

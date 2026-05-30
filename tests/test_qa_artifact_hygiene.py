@@ -5,10 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import pytest
-
 from qa_kit_cli._assets import get_commands_dir, get_templates_dir
-
 
 # Patterns that MUST NOT appear in qa-kit artifacts
 _FORBIDDEN = [

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import cast
 
 from qa_kit_cli._utils import load_json, save_json
-
 
 _STORE_FILE = "tokens.json"
 _ENV_PREFIX = "QAKIT_TOKEN_"
@@ -66,7 +66,7 @@ def get_token(service: str, qakit_dir: Path) -> str | None:
     keyring_token = _get_from_keyring(service)
     if keyring_token:
         return keyring_token
-    data = load_json(_store_path(qakit_dir))
+    data = cast(dict[str, str], load_json(_store_path(qakit_dir)))
     return data.get(service)
 
 

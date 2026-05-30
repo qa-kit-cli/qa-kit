@@ -3,14 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from qa_kit_cli.presets import (
-    ActivePreset,
-    PresetManifest,
     PresetManager,
+    PresetManifest,
     PresetRegistry,
     load_active_presets,
 )
 from qa_kit_cli.shared_infra import ensure_project_layout
-
 
 # ---------------------------------------------------------------------------
 # PresetManifest
@@ -266,6 +264,7 @@ def test_resolve_with_trace_exactly_one_winner(tmp_path) -> None:
 def test_preset_resolve_verbose_shows_all_layers(project_dir, runner=None) -> None:
     """qakit preset resolve --verbose shows a table with WINS."""
     from typer.testing import CliRunner
+
     from qa_kit_cli import app
     runner = CliRunner()
     ensure_project_layout(project_dir)
@@ -277,6 +276,7 @@ def test_preset_resolve_verbose_shows_all_layers(project_dir, runner=None) -> No
 def test_preset_resolve_non_verbose_shows_winner(project_dir, runner=None) -> None:
     """qakit preset resolve (without --verbose) also shows WINS for the winner."""
     from typer.testing import CliRunner
+
     from qa_kit_cli import app
     runner = CliRunner()
     ensure_project_layout(project_dir)

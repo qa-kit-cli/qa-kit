@@ -1,9 +1,9 @@
-"""Tabnine integration."""
+"""Tabnine integration (TOML format)."""
 
-from qa_kit_cli.integrations.base import MarkdownIntegration
+from qa_kit_cli.integrations.base import TomlIntegration
 
 
-class TabnineIntegration(MarkdownIntegration):
+class TabnineIntegration(TomlIntegration):
     key = "tabnine"
     config = {
         "name": "Tabnine",
@@ -13,7 +13,7 @@ class TabnineIntegration(MarkdownIntegration):
     }
     registrar_config = {
         "dir": ".tabnine/commands/",
-        "format": "markdown",
-        "args_placeholder": "$ARGUMENTS",
-        "extension": ".md",
+        "format": "toml",
+        "args_placeholder": "{{args}}",
+        "extension": ".toml",
     }

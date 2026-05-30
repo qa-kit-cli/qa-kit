@@ -6,25 +6,26 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
-
-try:
-    from platformdirs import user_config_dir as _platform_user_config_dir
-except Exception:  # pragma: no cover - fallback for minimal environments
-    def _platform_user_config_dir(appname: str) -> str:
-        return str(Path.home() / ".config" / appname)
 
 from qa_kit_cli._assets import get_core_pack
 from qa_kit_cli._github_http import safe_fetch_json
 
+_platformdirs: Any
+try:
+    import platformdirs as _platformdirs
+except Exception:  # pragma: no cover - fallback for minimal environments
+    _platformdirs = None
 
 _FETCH_FAILED = object()
 
 
 def user_config_dir(appname: str) -> str:
-    return _platform_user_config_dir(appname)
+    if _platformdirs is None:
+        return str(Path.home() / ".config" / appname)
+    return cast(str, _platformdirs.user_config_dir(appname))
 
 
 @dataclass(frozen=True)
@@ -231,10 +232,7 @@ class CatalogStackBase:
         out: list[dict[str, Any]] = []
         for item in entries:
             tags = item.get("tags", [])
-            if isinstance(tags, list):
-                tags_blob = " ".join(str(t) for t in tags)
-            else:
-                tags_blob = str(tags)
+            tags_blob = " ".join(str(t) for t in tags) if isinstance(tags, list) else str(tags)
             hay = " ".join(
                 [
                     str(item.get("id", "")),

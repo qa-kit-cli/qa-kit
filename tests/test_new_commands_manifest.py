@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
 from qa_kit_cli._assets import get_commands_dir
 from qa_kit_cli.agents import COMMAND_MANIFEST, CommandRegistrar
 from qa_kit_cli.shared_infra import ensure_project_layout

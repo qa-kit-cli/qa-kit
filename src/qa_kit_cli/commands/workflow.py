@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Any
 
 import typer
 
@@ -16,6 +16,11 @@ from qa_kit_cli.workflows.engine import WorkflowEngine
 app = typer.Typer(help="Run and manage QA workflows.")
 catalog_app = typer.Typer(help="Manage workflow catalogs.")
 app.add_typer(catalog_app, name="catalog")
+_RUN_INPUT_OPTION = typer.Option(
+    None,
+    "-i",
+    help="Input key=value pairs (can repeat, e.g. -i env=staging -i scope=smoke).",
+)
 
 
 def _ctx() -> tuple[Path, Path]:
@@ -40,17 +45,13 @@ def list_cmd() -> None:
 @app.command("run")
 def run(
     workflow_id: str,
-    inputs: List[str] = typer.Option(
-        [],
-        "-i",
-        help="Input key=value pairs (can repeat, e.g. -i env=staging -i scope=smoke).",
-    ),
+    inputs: list[str] | None = _RUN_INPUT_OPTION,
 ) -> None:
     """Run a workflow, optionally passing inputs."""
     project_root, qakit_dir = _ctx()
 
     parsed_inputs: dict[str, str] = {}
-    for kv in inputs:
+    for kv in inputs or []:
         if "=" in kv:
             k, v = kv.split("=", 1)
             parsed_inputs[k.strip()] = v.strip()
@@ -73,9 +74,9 @@ def resume(run_id: str) -> None:
     engine = WorkflowEngine(project_root, qakit_dir)
     try:
         result, state = engine.resume(run_id)
-    except FileNotFoundError:
+    except FileNotFoundError as exc:
         print_warning(f"Run '{run_id}' not found.")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from exc
     if not result.success:
         print_warning(f"Workflow resumed but failed at step {state.current_step}.")
         raise typer.Exit(1)
@@ -84,7 +85,7 @@ def resume(run_id: str) -> None:
 
 @app.command("status")
 def status(
-    run_id: Optional[str] = typer.Argument(None, help="Run ID to inspect (default: show all)."),
+    run_id: str | None = typer.Argument(None, help="Run ID to inspect (default: show all)."),
 ) -> None:
     """Show the status of a run or list all runs."""
     project_root, qakit_dir = _ctx()
@@ -168,8 +169,8 @@ def info(workflow_id: str) -> None:
 
 @app.command("search")
 def search(
-    query: Optional[str] = typer.Argument(None),
-    tag: Optional[str] = typer.Option(None, "--tag"),
+    query: str | None = typer.Argument(None),
+    tag: str | None = typer.Option(None, "--tag"),
 ) -> None:
     """Search available workflows."""
     project_root, qakit_dir = _ctx()
@@ -204,7 +205,7 @@ def catalog_list() -> None:
 @catalog_app.command("add")
 def catalog_add(
     url: str,
-    name: Optional[str] = typer.Option(None, "--name"),
+    name: str | None = typer.Option(None, "--name"),
 ) -> None:
     """Add a workflow catalog URL."""
     import yaml
@@ -212,10 +213,10 @@ def catalog_add(
     project_root = Path.cwd()
     ensure_project_layout(project_root)
     catalog_file = project_root / ".qakit" / "workflow-catalogs.yml"
-    data: dict = {}
+    data: dict[str, Any] = {}
     if catalog_file.exists():
         data = yaml.safe_load(catalog_file.read_text(encoding="utf-8")) or {}
-    catalogs: list = data.get("catalogs", [])
+    catalogs: list[dict[str, Any]] = data.get("catalogs", [])
     catalogs.append({"name": name or url, "url": url})
     data["catalogs"] = catalogs
     catalog_file.write_text(yaml.dump(data, default_flow_style=False), encoding="utf-8")

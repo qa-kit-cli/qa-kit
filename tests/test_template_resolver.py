@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-from qa_kit_cli._assets import get_commands_dir
 from qa_kit_cli.agents import COMMAND_MANIFEST
 from qa_kit_cli.shared_infra import ensure_project_layout
 from qa_kit_cli.template_resolver import TemplateResolver

@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
 
 import typer
 
@@ -17,10 +17,16 @@ from qa_kit_cli._integration_options import parse_integration_options
 from qa_kit_cli._utils import save_json
 from qa_kit_cli.agents import CommandRegistrar, SkillRegistrar, detect_active_integration
 from qa_kit_cli.integration_state import IntegrationState
-from qa_kit_cli.integrations import get_integration
+from qa_kit_cli.integrations import get_integration, register_integration
 from qa_kit_cli.presets import PresetManager
 from qa_kit_cli.project_config import ProjectConfig
 from qa_kit_cli.shared_infra import ensure_memory_files, refresh_shared_infra
+
+_PRESET_OPTION = typer.Option(
+    None,
+    "--preset",
+    help="Install preset(s) before registering commands (can repeat).",
+)
 
 
 def _default_script() -> str:
@@ -90,7 +96,7 @@ def _initialize_git(project_root: Path) -> None:
 
 
 def init_command(
-    project_name: Optional[str] = typer.Argument(
+    project_name: str | None = typer.Argument(
         None,
         help="Directory to initialize. Omit or use '.' for the current directory.",
     ),
@@ -98,23 +104,30 @@ def init_command(
     force: bool = typer.Option(
         False, "--force", help="Allow initialization in a non-empty directory."
     ),
-    integration: Optional[str] = typer.Option(
+    integration: str | None = typer.Option(
         None, "--integration", "-i", help="Integration key to activate."
     ),
-    integration_options: Optional[str] = typer.Option(
+    ai: str | None = typer.Option(
+        None,
+        "--ai",
+        help="Alias for --integration (for compatibility with spec-kit tooling).",
+        hidden=True,
+    ),
+    integration_options: str | None = typer.Option(
         None,
         "--integration-options",
         help="Agent-specific options, e.g. '--skills --commands-dir .myagent/cmds'.",
     ),
-    preset: List[str] = typer.Option(
-        [],
-        "--preset",
-        help="Install preset(s) before registering commands (can repeat).",
+    commands_dir: str | None = typer.Option(
+        None,
+        "--commands-dir",
+        help="Custom output directory for command files (required when --integration generic).",
     ),
+    preset: list[str] | None = _PRESET_OPTION,
     ignore_agent_tools: bool = typer.Option(
         False, "--ignore-agent-tools", help="Skip checking whether agent CLIs exist."
     ),
-    script: Optional[str] = typer.Option(
+    script: str | None = typer.Option(
         None, "--script", help="Platform script type: 'sh' (bash) or 'ps' (PowerShell). Defaults to platform-appropriate value."
     ),
     no_git: bool = typer.Option(
@@ -125,7 +138,7 @@ def init_command(
         "--branch-numbering",
         help="Branch numbering scheme: 'sequential' or 'timestamp'.",
     ),
-    suite: Optional[str] = typer.Option(
+    suite: str | None = typer.Option(
         None,
         "--suite",
         help=(
@@ -135,6 +148,12 @@ def init_command(
     ),
 ) -> None:
     """Scaffold .qakit and install slash commands to the active integration."""
+    # --ai is a hidden alias for --integration (spec-kit migration compat)
+    if ai is not None and integration is None:
+        integration = ai
+    elif ai is not None and integration is not None:
+        print_warning("Both --ai and --integration specified; --integration takes precedence.")
+
     # Validate branch_numbering
     if branch_numbering not in ("sequential", "timestamp"):
         raise typer.BadParameter(
@@ -189,9 +208,10 @@ def init_command(
             )
 
     # 5. Install presets first so their overrides apply to command rendering
-    if preset:
+    preset_values = preset or []
+    if preset_values:
         manager = PresetManager(project_root)
-        for p in preset:
+        for p in preset_values:
             try:
                 manager.add(p)
                 print_info(f"Installed preset '{p}'.")
@@ -203,6 +223,42 @@ def init_command(
     integration_cls = get_integration(selected)
     if integration_cls is None:
         raise typer.BadParameter(f"Unknown integration: {selected}")
+
+    original_generic_cls = None
+    used_dynamic_generic = False
+
+    # For generic integration, apply custom commands dir if provided
+    if selected == "generic" and commands_dir:
+        generic_cls = get_integration("generic")
+        if generic_cls is not None:
+            original_generic_cls = generic_cls
+            import types
+
+            custom_config = dict(generic_cls.registrar_config)
+            custom_config["dir"] = commands_dir
+            custom_root = dict(generic_cls.config)
+            custom_root["folder"] = commands_dir
+            dynamic_generic = types.new_class(
+                "DynamicGenericIntegration",
+                (generic_cls,),
+                {},
+                lambda ns: ns.update(
+                    {
+                        "key": "generic",
+                        "config": custom_root,
+                        "registrar_config": custom_config,
+                    }
+                ),
+            )
+            register_integration(dynamic_generic)
+            integration_cls = dynamic_generic
+            used_dynamic_generic = True
+    elif selected == "generic" and not commands_dir:
+        print_warning(
+            "Using generic integration without --commands-dir. "
+            "Commands will be written to .generic/commands/. "
+            "Pass --commands-dir <path> to specify your agent's command directory."
+        )
 
     # 7. Optionally verify agent CLI is installed
     if not ignore_agent_tools and integration_cls.config.get("requires_cli"):
@@ -224,6 +280,9 @@ def init_command(
         cmd_reg = CommandRegistrar()
         installed = cmd_reg.install_for_integration(project_root, qakit_dir, selected)
         mode_label = "commands"
+
+    if used_dynamic_generic and original_generic_cls is not None:
+        register_integration(original_generic_cls)
 
     # 9. Write context file
     context_path = integration_cls.get_context_file(project_root)
@@ -270,8 +329,10 @@ def init_command(
             "project_name": project_name,
             "here": here,
             "integration": selected,
+            "ai": ai,
             "integration_options": integration_options,
-            "presets": list(preset),
+            "commands_dir": commands_dir,
+            "presets": list(preset_values),
             "script": effective_script,
             "no_git": no_git,
             "branch_numbering": branch_numbering,

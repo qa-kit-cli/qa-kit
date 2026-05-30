@@ -8,7 +8,6 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-
 _TIMEOUT = 15  # seconds
 
 
@@ -18,7 +17,7 @@ def fetch_text(url: str) -> str:
         raise ValueError(f"Only HTTPS URLs are allowed, got: {url!r}")
     req = urllib.request.Request(url, headers={"User-Agent": "qa-kit-cli/0.1"})
     with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:  # noqa: S310
-        return resp.read().decode("utf-8")
+        return str(resp.read().decode("utf-8"))
 
 
 def fetch_json(url: str) -> Any:

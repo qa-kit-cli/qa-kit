@@ -41,7 +41,7 @@ class IntegrationState:
     qakit_version: str = ""
 
     @classmethod
-    def load(cls, qakit_dir: Path) -> "IntegrationState":
+    def load(cls, qakit_dir: Path) -> IntegrationState:
         data = load_json(qakit_dir / _FILENAME)
         ver = int(data.get("schema_version", 1))
 

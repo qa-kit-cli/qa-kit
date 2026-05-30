@@ -7,7 +7,7 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -27,7 +27,7 @@ class PresetManifest:
     compositions: list[dict[str, Any]]
 
     @classmethod
-    def load_from_dir(cls, preset_dir: Path) -> "PresetManifest":
+    def load_from_dir(cls, preset_dir: Path) -> PresetManifest:
         data = yaml.safe_load((preset_dir / "preset.yml").read_text(encoding="utf-8"))
         return cls(
             id=str(data.get("id", preset_dir.name)),
@@ -135,7 +135,7 @@ class PresetManager:
         self.local_dir.mkdir(parents=True, exist_ok=True)
 
     def _state(self) -> dict[str, Any]:
-        data = load_json(self.state_path)
+        data = cast(dict[str, Any], load_json(self.state_path))
         if not data:
             return {"presets": []}
         data.setdefault("presets", [])
@@ -156,7 +156,9 @@ class PresetManager:
         shutil.copytree(src, dst)
 
         data = self._state()
-        presets = [p for p in data["presets"] if p.get("id") != manifest.id]
+        presets: list[dict[str, Any]] = [
+            p for p in cast(list[dict[str, Any]], data["presets"]) if p.get("id") != manifest.id
+        ]
         presets.append(
             {
                 "id": manifest.id,

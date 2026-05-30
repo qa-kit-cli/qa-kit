@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from qa_kit_cli.workflows.base import StepBase, StepContext, StepResult

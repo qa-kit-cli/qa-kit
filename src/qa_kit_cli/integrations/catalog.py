@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from qa_kit_cli._assets import get_core_pack
 from qa_kit_cli._github_http import safe_fetch_json
@@ -21,7 +21,8 @@ def _load_bundled_catalog() -> list[dict[str, Any]]:
     ]
     for local in candidates:
         if local.exists():
-            return json.loads(local.read_text(encoding="utf-8")).get("integrations", [])
+            data = cast(dict[str, Any], json.loads(local.read_text(encoding="utf-8")))
+            return cast(list[dict[str, Any]], data.get("integrations", []))
     return []
 
 

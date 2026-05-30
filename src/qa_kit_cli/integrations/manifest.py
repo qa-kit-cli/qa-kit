@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 from qa_kit_cli._utils import load_json, save_json, sha256_file
 
@@ -21,7 +22,7 @@ def record_files(qakit_dir: Path, integration_key: str, files: list[Path]) -> No
 
 def get_recorded_files(qakit_dir: Path, integration_key: str) -> dict[str, str]:
     """Return {path_str: sha256} for files recorded under integration_key."""
-    return load_json(_manifest_path(qakit_dir, integration_key))
+    return cast(dict[str, str], load_json(_manifest_path(qakit_dir, integration_key)))
 
 
 def get_modified_files(qakit_dir: Path, integration_key: str) -> list[Path]:

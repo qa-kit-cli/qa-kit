@@ -6,14 +6,12 @@ from unittest.mock import patch
 import pytest
 
 from qa_kit_cli.extensions import (
-    HOOK_EVENTS,
-    ExtensionManifest,
     ExtensionManager,
+    ExtensionManifest,
     ExtensionRegistry,
     HookExecutor,
 )
 from qa_kit_cli.shared_infra import ensure_project_layout
-
 
 # ---------------------------------------------------------------------------
 # ExtensionManifest

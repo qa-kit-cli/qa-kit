@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 import typer
 from rich.panel import Panel
@@ -50,8 +50,8 @@ _preset_alias_shown: set[str] = set()
 def _do_add_preset(
     preset_ref: str,
     priority: int,
-    dev: Optional[str],
-    from_url: Optional[str],
+    dev: str | None,
+    from_url: str | None,
 ) -> None:
     """Shared implementation for install and add preset commands."""
     project_root = Path.cwd()
@@ -78,8 +78,8 @@ def _do_remove_preset(preset_id: str) -> None:
 def install_preset(
     preset_ref: str,
     priority: int = typer.Option(10, "--priority", help="Preset priority (lower = higher priority). Default: 10."),
-    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
-    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+    dev: str | None = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: str | None = typer.Option(None, "--from", help="Install from a URL."),
 ) -> None:
     """Install a preset (bundled ID, local --dev path, or --from URL)."""
     _do_add_preset(preset_ref, priority, dev, from_url)
@@ -89,8 +89,8 @@ def install_preset(
 def add(
     preset_ref: str,
     priority: int = typer.Option(10, "--priority", help="Preset priority (lower = higher priority). Default: 10."),
-    dev: Optional[str] = typer.Option(None, "--dev", help="Install from a local directory path."),
-    from_url: Optional[str] = typer.Option(None, "--from", help="Install from a URL."),
+    dev: str | None = typer.Option(None, "--dev", help="Install from a local directory path."),
+    from_url: str | None = typer.Option(None, "--from", help="Install from a URL."),
 ) -> None:
     """Alias for install."""
     if "preset.add" not in _preset_alias_shown:
@@ -195,9 +195,9 @@ def disable(preset_id: str) -> None:
 
 @app.command("search")
 def search(
-    query: Optional[str] = typer.Argument(None, help="Search term."),
-    tag: Optional[str] = typer.Option(None, "--tag", help="Filter by tag."),
-    author: Optional[str] = typer.Option(None, "--author", help="Filter by author."),
+    query: str | None = typer.Argument(None, help="Search term."),
+    tag: str | None = typer.Option(None, "--tag", help="Filter by tag."),
+    author: str | None = typer.Option(None, "--author", help="Filter by author."),
 ) -> None:
     """Search available presets across active catalogs."""
     manager = _manager()
@@ -244,7 +244,7 @@ def info(preset_id: str) -> None:
     catalog_entry = stack.get(preset_id)
     installed_entry = next((e for e in manager.list() if str(e.get("id", "")) == preset_id), None)
 
-    data: dict = {}
+    data: dict[str, Any] = {}
     source_label = "catalog"
     source_ref = str(catalog_entry.get("_source_ref", "")) if catalog_entry else ""
     manifest_path: Path | None = None
@@ -372,7 +372,7 @@ def catalog_list() -> None:
 @catalog_app.command("add")
 def catalog_add(
     url: str,
-    name: Optional[str] = typer.Option(None, "--name", help="Catalog name."),
+    name: str | None = typer.Option(None, "--name", help="Catalog name."),
     priority: int = typer.Option(50, "--priority", help="Catalog priority (lower = higher priority)."),
     install_allowed: bool = typer.Option(False, "--install-allowed", help="Allow auto-install from this catalog."),
 ) -> None:
@@ -382,10 +382,10 @@ def catalog_add(
     project_root = Path.cwd()
     ensure_project_layout(project_root)
     catalog_file = project_root / ".qakit" / "preset-catalogs.yml"
-    data: dict = {}
+    data: dict[str, Any] = {}
     if catalog_file.exists():
         data = yaml.safe_load(catalog_file.read_text(encoding="utf-8")) or {}
-    catalogs: list = data.get("catalogs", [])
+    catalogs: list[dict[str, Any]] = data.get("catalogs", [])
     catalogs.append({"name": name or url, "url": url, "priority": priority, "install_allowed": install_allowed})
     data["catalogs"] = catalogs
     catalog_file.write_text(yaml.dump(data, default_flow_style=False), encoding="utf-8")

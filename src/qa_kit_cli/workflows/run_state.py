@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 @dataclass
@@ -26,7 +27,7 @@ class RunState:
     updated_at: str = field(default_factory=_now)
 
     @classmethod
-    def new(cls, workflow_id: str, inputs: dict[str, Any]) -> "RunState":
+    def new(cls, workflow_id: str, inputs: dict[str, Any]) -> RunState:
         now = _now()
         return cls(
             run_id=uuid.uuid4().hex[:8],
@@ -40,7 +41,7 @@ class RunState:
         )
 
     @classmethod
-    def load(cls, run_dir: Path) -> "RunState":
+    def load(cls, run_dir: Path) -> RunState:
         data = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
         return cls(**data)
 
@@ -82,8 +83,6 @@ def list_runs(runs_dir: Path) -> list[RunState]:
     for run_dir in sorted(runs_dir.iterdir()):
         state_file = run_dir / "state.json"
         if state_file.exists():
-            try:
+            with contextlib.suppress(Exception):
                 states.append(RunState.load(run_dir))
-            except Exception:
-                pass
     return sorted(states, key=lambda r: r.created_at, reverse=True)

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from qa_kit_cli.shared_infra import ensure_project_layout
 from qa_kit_cli.suite_config import (
     SUITE_MEMORY_FILES,

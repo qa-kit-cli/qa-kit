@@ -10,9 +10,8 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 SUITE_MEMORY_FILES: list[str] = [
     "qa-strategy.md",
@@ -40,7 +39,7 @@ def slugify(name: str) -> str:
 def _next_suite_number(suites_dir: Path, scheme: str) -> str:
     """Return the next zero-padded 3-digit suite number or timestamp string."""
     if scheme == "timestamp":
-        return datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        return datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     existing: list[int] = []
     if suites_dir.exists():
         for p in suites_dir.iterdir():
@@ -66,7 +65,7 @@ class SuiteIndex:
     suites: list[SuiteEntry] = field(default_factory=list)
 
     @classmethod
-    def load(cls, qakit_dir: Path) -> "SuiteIndex":
+    def load(cls, qakit_dir: Path) -> SuiteIndex:
         """Load the suite index from .qakit/suites/index.json."""
         index_file = qakit_dir / "suites" / "index.json"
         if not index_file.exists():

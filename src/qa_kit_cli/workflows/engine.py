@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -65,7 +65,7 @@ class WorkflowEngine:
         path = self.catalog.get_path(workflow_id)
         if path is None:
             raise FileNotFoundError(f"Workflow not found: {workflow_id}")
-        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        return cast(dict[str, Any], yaml.safe_load(path.read_text(encoding="utf-8")) or {})
 
     def _run_step(self, step: dict[str, Any]) -> StepResult:
         step_type = str(step.get("type", "command"))
@@ -80,7 +80,7 @@ class WorkflowEngine:
             if hook_prefix:
                 self._hook_executor.execute(self._active_manifests, f"before_{hook_prefix}")
 
-        result = runner.run(resolved, self.context)
+        result = cast(StepResult, runner.run(resolved, self.context))
 
         if hook_prefix and result.success:
             self._hook_executor.execute(self._active_manifests, f"after_{hook_prefix}")

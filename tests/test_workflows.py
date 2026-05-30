@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 import yaml
 
 from qa_kit_cli.shared_infra import ensure_project_layout
-from qa_kit_cli.workflows.base import StepContext, StepResult
+from qa_kit_cli.workflows.base import StepContext
 from qa_kit_cli.workflows.catalog import WorkflowCatalog
 from qa_kit_cli.workflows.engine import WorkflowEngine, _command_to_hook_prefix
 from qa_kit_cli.workflows.expressions import resolve_expressions
-from qa_kit_cli.workflows.steps import CommandStep, GateStep, ParallelStep, ShellStep
-
+from qa_kit_cli.workflows.steps import CommandStep, GateStep, ParallelStep
 
 # ---------------------------------------------------------------------------
 # _command_to_hook_prefix

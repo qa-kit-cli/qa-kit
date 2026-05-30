@@ -10,7 +10,6 @@ import pytest
 from qa_kit_cli._assets import get_bundled_extensions_dir
 from qa_kit_cli.extensions import HOOK_EVENTS, ExtensionManifest
 
-
 # ---------------------------------------------------------------------------
 # HOOK_EVENTS structure
 # ---------------------------------------------------------------------------

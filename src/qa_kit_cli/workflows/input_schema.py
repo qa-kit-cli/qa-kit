@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
-
-_TYPE_COERCIONS = {
+_TYPE_COERCIONS: dict[str, Callable[[Any], Any]] = {
     "string": str,
     "number": float,
     "boolean": lambda v: v if isinstance(v, bool) else str(v).lower() in ("true", "1", "yes"),
@@ -18,8 +18,8 @@ def _coerce(value: Any, schema_type: str) -> Any:
         return value
     try:
         return coerce(value)
-    except (ValueError, TypeError):
-        raise ValueError(f"Cannot coerce {value!r} to type '{schema_type}'")
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"Cannot coerce {value!r} to type '{schema_type}'") from exc
 
 
 def validate_and_apply(

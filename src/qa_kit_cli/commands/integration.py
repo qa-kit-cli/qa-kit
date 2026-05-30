@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
 import typer
 
@@ -52,7 +52,7 @@ def _install_integration(
         mode = "commands"
 
     state = IntegrationState.load(qakit_dir)
-    meta: dict = {"name": integration_cls.config.get("name", key), "mode": mode}
+    meta: dict[str, Any] = {"name": integration_cls.config.get("name", key), "mode": mode}
     if int_opts:
         meta["options"] = int_opts
     if script:
@@ -73,7 +73,7 @@ def _install_integration(
 
 def _install_command(
     key: str,
-    integration_options: Optional[str] = typer.Option(
+    integration_options: str | None = typer.Option(
         None, "--integration-options", help="Agent-specific options, e.g. '--skills'."
     ),
     force: bool = typer.Option(
@@ -111,7 +111,7 @@ def _install_command(
 @app.command("install")
 def install(
     key: str,
-    integration_options: Optional[str] = typer.Option(
+    integration_options: str | None = typer.Option(
         None, "--integration-options", help="Agent-specific options, e.g. '--skills'."
     ),
     force: bool = typer.Option(
@@ -127,7 +127,7 @@ def install(
 @app.command("add")
 def add_alias(
     key: str,
-    integration_options: Optional[str] = typer.Option(
+    integration_options: str | None = typer.Option(
         None, "--integration-options", help="Agent-specific options, e.g. '--skills'."
     ),
     force: bool = typer.Option(
@@ -208,10 +208,10 @@ def remove_alias(
 @app.command("switch")
 def switch(
     key: str,
-    integration_options: Optional[str] = typer.Option(
+    integration_options: str | None = typer.Option(
         None, "--integration-options", help="Agent-specific options, e.g. '--skills'."
     ),
-    script: Optional[str] = typer.Option(
+    script: str | None = typer.Option(
         None, "--script", help="Platform script type: 'sh' or 'ps'."
     ),
     force: bool = typer.Option(
@@ -278,14 +278,14 @@ def list_cmd(
     available = {i.key: i for i in list_integrations()}
     rows: list[list[str]] = []
     if catalog:
-        for key, intg in sorted(available.items()):
-            integration_type = "skills+commands" if intg.supports_skills else "commands"
+        for key, catalog_integration in sorted(available.items()):
+            integration_type = "skills+commands" if catalog_integration.supports_skills else "commands"
             installed = "yes" if state.is_installed(key) else "no"
-            safe = "yes" if intg.multi_install_safe else "no"
-            cli_required = "yes" if bool(intg.config.get("requires_cli")) else "no"
+            safe = "yes" if catalog_integration.multi_install_safe else "no"
+            cli_required = "yes" if bool(catalog_integration.config.get("requires_cli")) else "no"
             rows.append([
                 key,
-                str(intg.config.get("name", key)),
+                str(catalog_integration.config.get("name", key)),
                 integration_type,
                 installed,
                 safe,
@@ -299,17 +299,17 @@ def list_cmd(
         return
 
     for key, meta in sorted(state.installed.items()):
-        intg = available.get(key)
-        if intg is None:
+        installed_integration = available.get(key)
+        if installed_integration is None:
             integration_type = str(meta.get("mode", "commands"))
             safe = "no"
             cli_required = "unknown"
             name = str(meta.get("name", key))
         else:
-            integration_type = "skills+commands" if intg.supports_skills else "commands"
-            safe = "yes" if intg.multi_install_safe else "no"
-            cli_required = "yes" if bool(intg.config.get("requires_cli")) else "no"
-            name = str(intg.config.get("name", key))
+            integration_type = "skills+commands" if installed_integration.supports_skills else "commands"
+            safe = "yes" if installed_integration.multi_install_safe else "no"
+            cli_required = "yes" if bool(installed_integration.config.get("requires_cli")) else "no"
+            name = str(installed_integration.config.get("name", key))
         active = "yes" if state.active_key == key else "no"
         rows.append([key, name, integration_type, active, safe, cli_required])
 
@@ -322,16 +322,16 @@ def list_cmd(
 
 @app.command("upgrade")
 def upgrade(
-    key: Optional[str] = typer.Argument(None, help="Integration key to upgrade (default: all installed)."),
+    key: str | None = typer.Argument(None, help="Integration key to upgrade (default: all installed)."),
     force: bool = typer.Option(
         False,
         "--force",
         help="Overwrite locally-modified files.",
     ),
-    script: Optional[str] = typer.Option(
+    script: str | None = typer.Option(
         None, "--script", help="Update script type: 'sh' or 'ps'."
     ),
-    integration_options: Optional[str] = typer.Option(
+    integration_options: str | None = typer.Option(
         None, "--integration-options", help="Update integration options, e.g. '--skills'."
     ),
 ) -> None:
@@ -360,7 +360,7 @@ def upgrade(
         # Apply new options/script if provided
         if integration_options is not None:
             int_opts = parse_integration_options(integration_options)
-            meta["options"] = int_opts  # type: ignore[assignment]
+            meta["options"] = int_opts
             skills_mode = bool(int_opts.get("skills", False))
             meta["mode"] = "skills" if skills_mode else "commands"
         if script in ("sh", "ps"):

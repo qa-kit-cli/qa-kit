@@ -6,13 +6,12 @@ import textwrap
 from pathlib import Path
 
 import pytest
-import yaml
 
 from qa_kit_cli.shared_infra import ensure_project_layout
+from qa_kit_cli.workflows.base import StepContext
 from qa_kit_cli.workflows.engine import WorkflowEngine
 from qa_kit_cli.workflows.input_schema import validate_and_apply
 from qa_kit_cli.workflows.steps.gate_step import GateStep
-from qa_kit_cli.workflows.base import StepContext, StepResult
 from qa_kit_cli.workflows.steps.unsupported_step import (
     DoWhileStep,
     FanInStep,

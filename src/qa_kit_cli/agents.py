@@ -91,6 +91,26 @@ def _apply_compositions(
 class CommandRegistrar:
     """Writes slash command template files for an integration."""
 
+    @staticmethod
+    def _ensure_inside(candidate: Path, base: Path) -> None:
+        """Validate that a write target stays within the expected base directory.
+
+        Uses os.path.normpath for lexical normalization so traversal via ``..``
+        or absolute paths is rejected. Intentionally symlinked subdirectories
+        remain supported.
+
+        Raises:
+            ValueError: If the normalized candidate path escapes ``base``.
+        """
+        import os
+
+        normalized = Path(os.path.normpath(candidate))
+        base_normalized = Path(os.path.normpath(base))
+        if not normalized.is_relative_to(base_normalized):
+            raise ValueError(
+                f"Output path {candidate!r} escapes commands directory {base!r}"
+            )
+
     def __init__(self, templates_dir: Path | None = None) -> None:
         self.templates_dir = templates_dir or get_commands_dir()
 
@@ -108,7 +128,7 @@ class CommandRegistrar:
         integration_key: str,
         spec: CommandSpec,
         active_presets: list[ActivePreset] | None = None,
-        resolver: "object | None" = None,
+        resolver: object | None = None,
     ) -> str:
         integration = get_integration(integration_key)
         if integration is None:
@@ -154,6 +174,7 @@ class CommandRegistrar:
                 continue
             filename = f"{spec.command_id}{ext}"
             target = commands_dir / filename
+            self._ensure_inside(target, commands_dir)
             atomic_write(target, rendered)
             installed.append(target)
 

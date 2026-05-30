@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 from typer.testing import CliRunner
 
 from qa_kit_cli.__init__ import app
@@ -14,7 +13,6 @@ from qa_kit_cli.integrations.claude import ClaudeIntegration
 from qa_kit_cli.integrations.codex import CodexIntegration
 from qa_kit_cli.integrations.generic import GenericIntegration
 from qa_kit_cli.shared_infra import ensure_project_layout
-
 
 # ---------------------------------------------------------------------------
 # Schema migration
@@ -98,7 +96,7 @@ def test_generic_is_not_multi_install_safe() -> None:
 
 def test_install_refuses_unsafe_multi_install(project_dir: Path) -> None:
     runner = CliRunner()
-    qakit_dir = ensure_project_layout(project_dir)
+    ensure_project_layout(project_dir)
 
     # First install claude (multi_install_safe=True)
     runner.invoke(app, ["integration", "install", "claude"])
@@ -111,7 +109,7 @@ def test_install_refuses_unsafe_multi_install(project_dir: Path) -> None:
 
 def test_install_unsafe_with_force_succeeds(project_dir: Path) -> None:
     runner = CliRunner()
-    qakit_dir = ensure_project_layout(project_dir)
+    ensure_project_layout(project_dir)
 
     runner.invoke(app, ["integration", "install", "claude"])
     result = runner.invoke(app, ["integration", "install", "generic", "--force"])
@@ -120,7 +118,7 @@ def test_install_unsafe_with_force_succeeds(project_dir: Path) -> None:
 
 def test_install_safe_integration_does_not_need_force(project_dir: Path) -> None:
     runner = CliRunner()
-    qakit_dir = ensure_project_layout(project_dir)
+    ensure_project_layout(project_dir)
 
     runner.invoke(app, ["integration", "install", "claude"])
     result = runner.invoke(app, ["integration", "install", "codex"])

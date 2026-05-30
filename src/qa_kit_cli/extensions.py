@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import filecmp
 import shutil
 import subprocess
@@ -9,7 +10,7 @@ import tempfile
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -76,7 +77,7 @@ class ExtensionManifest:
     commands: dict[str, str]
 
     @classmethod
-    def load_from_dir(cls, extension_dir: Path) -> "ExtensionManifest":
+    def load_from_dir(cls, extension_dir: Path) -> ExtensionManifest:
         data = yaml.safe_load((extension_dir / "extension.yml").read_text(encoding="utf-8"))
         hooks = [str(h) for h in data.get("hooks", [])]
         invalid = [h for h in hooks if h not in HOOK_EVENTS]
@@ -156,7 +157,7 @@ class ExtensionManager:
         self.local_dir.mkdir(parents=True, exist_ok=True)
 
     def _state(self) -> dict[str, Any]:
-        data = load_json(self.state_path)
+        data = cast(dict[str, Any], load_json(self.state_path))
         if not data:
             return {"extensions": []}
         data.setdefault("extensions", [])
@@ -179,7 +180,9 @@ class ExtensionManager:
         shutil.copytree(src, dst)
 
         data = self._state()
-        extensions = [e for e in data["extensions"] if e.get("id") != manifest.id]
+        extensions: list[dict[str, Any]] = [
+            e for e in cast(list[dict[str, Any]], data["extensions"]) if e.get("id") != manifest.id
+        ]
         extensions.append({
             "id": manifest.id,
             "name": manifest.name,
@@ -187,7 +190,7 @@ class ExtensionManager:
             "priority": priority,
             "enabled": True,
             "source": str(src),
-            "installed_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "installed_at": datetime.datetime.now(datetime.UTC).isoformat(),
         })
         data["extensions"] = extensions
         self._save(data)
@@ -337,8 +340,8 @@ class ExtensionManager:
         self._save(data)
         return changed
 
-    def active_manifests(self) -> list[ExtensionManifest]:
-        manifests: list[ExtensionManifest] = []
+    def active_manifests(self) -> builtins.list[ExtensionManifest]:
+        manifests: builtins.list[ExtensionManifest] = []
         for ext in self.list():
             if not ext.get("enabled", True):
                 continue

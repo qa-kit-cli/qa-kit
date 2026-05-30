@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich import box
@@ -83,7 +82,7 @@ def switch(suite_id: str) -> None:
 
 @app.command("info")
 def info(
-    suite_id: Optional[str] = typer.Argument(None, help="Suite ID (default: active suite)."),
+    suite_id: str | None = typer.Argument(None, help="Suite ID (default: active suite)."),
 ) -> None:
     """Show details for a suite or the currently active suite."""
     project_root, qakit_dir = _ctx()

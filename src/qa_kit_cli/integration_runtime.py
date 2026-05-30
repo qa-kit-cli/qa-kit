@@ -26,4 +26,4 @@ def get_commands_dir_for_active(qakit_dir: Path) -> Path | None:
     folder = integration.config.get("folder", "")
     if not folder:
         return None
-    return project_root / folder
+    return project_root / str(folder)

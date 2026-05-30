@@ -5,12 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from qa_kit_cli.integrations import get_integration, list_integrations, register_integration
-from qa_kit_cli.integrations.base import IntegrationBase, MarkdownIntegration, TomlIntegration
 from qa_kit_cli.integrations.agy import AgyIntegration
+from qa_kit_cli.integrations.base import (
+    MarkdownIntegration,
+    YamlIntegration,
+)
 from qa_kit_cli.integrations.claude import ClaudeIntegration
 from qa_kit_cli.integrations.copilot import CopilotIntegration
 from qa_kit_cli.integrations.gemini import GeminiIntegration
-
+from qa_kit_cli.integrations.goose import GooseIntegration
 
 # ---------------------------------------------------------------------------
 # Registry
@@ -106,6 +109,70 @@ def test_toml_integration_escapes_double_quotes_in_description() -> None:
 
 def test_toml_integration_command_extension_is_toml() -> None:
     assert GeminiIntegration.command_extension() == ".toml"
+
+
+# ---------------------------------------------------------------------------
+# YamlIntegration rendering (Goose)
+# ---------------------------------------------------------------------------
+
+
+def test_yaml_integration_render_contains_version() -> None:
+    rendered = GooseIntegration.render_command("qakit.strategy", "Do the thing.", "Generate QA strategy")
+    assert "version: 1.0.0" in rendered
+
+
+def test_yaml_integration_render_contains_title() -> None:
+    rendered = GooseIntegration.render_command("qakit.strategy", "Content.", "desc")
+    assert "title:" in rendered
+    assert "Strategy" in rendered
+
+
+def test_yaml_integration_render_contains_prompt_block() -> None:
+    rendered = GooseIntegration.render_command("qakit.strategy", "My QA prompt.", "desc")
+    assert "prompt: |" in rendered
+    assert "My QA prompt." in rendered
+
+
+def test_yaml_integration_render_contains_activities() -> None:
+    rendered = GooseIntegration.render_command("qakit.strategy", "Content.", "desc")
+    assert "QA Automation" in rendered
+
+
+def test_goose_integration_key() -> None:
+    assert GooseIntegration.key == "goose"
+
+
+def test_goose_integration_directory_is_recipes() -> None:
+    assert GooseIntegration.registrar_config["dir"] == ".goose/recipes"
+
+
+def test_goose_integration_extension_is_yaml() -> None:
+    assert GooseIntegration.command_extension() == ".yaml"
+
+
+def test_goose_integration_args_placeholder_is_template() -> None:
+    assert GooseIntegration.args_placeholder() == "{{args}}"
+
+
+def test_goose_not_markdown_integration() -> None:
+    assert not issubclass(GooseIntegration, MarkdownIntegration)
+
+
+def test_goose_is_yaml_integration() -> None:
+    assert issubclass(GooseIntegration, YamlIntegration)
+
+
+def test_yaml_integration_subclass_pattern() -> None:
+    """Verify YamlIntegration can be subclassed with zero method overrides."""
+
+    class TestYaml(YamlIntegration):
+        key = "_test_yaml"
+        config = {"folder": ".test/"}
+        registrar_config = {"dir": ".test/recipes", "extension": ".yaml"}
+
+    rendered = TestYaml.render_command("_test_yaml.cmd", "body text", "test desc")
+    assert "prompt: |" in rendered
+    assert "body text" in rendered
 
 
 # ---------------------------------------------------------------------------

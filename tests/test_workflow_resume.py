@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from qa_kit_cli.shared_infra import ensure_project_layout
 from qa_kit_cli.workflows.engine import WorkflowEngine
-from qa_kit_cli.workflows.run_state import RunState, list_runs
+from qa_kit_cli.workflows.run_state import RunState
 
 
 def test_run_state_persisted_after_workflow(project_dir) -> None:
